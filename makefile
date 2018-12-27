@@ -1,7 +1,11 @@
 
 CXX=g++
 CXXFLAGS=
-LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
+ifeq ($(OS),Darwin)
+	LDFLAGS=-lglfw3 -framework OpenGL -lpthread -ldl
+else
+	LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
+endif
 INC=-Iinclude/
 EXEC=asia-engine
 SRC= $(wildcard src/*.cpp)

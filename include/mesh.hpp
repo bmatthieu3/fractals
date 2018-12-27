@@ -27,6 +27,15 @@ struct Vertex {
     vec2 texcoord;
 };
 
+struct Material {
+    GLuint texture_id;
+
+    vec3 ambiant;
+    vec3 diffuse;
+    vec3 specular;
+    float shininess;
+};
+
 class Mesh {
     public:
         Mesh(const shared_ptr<Shader> shader);
@@ -35,16 +44,17 @@ class Mesh {
         void draw(float time) const;
 
     private:
-        // VAO
+        // Vertex Array Object
         unsigned int m_vao;
-        // VBO
+        // Vertex Buffer Object
         unsigned int m_vbo;
+        // Element Buffer Object
         unsigned int m_ebo;
 
-        // attributes
+        // Attributes
         mat4 m_model_mat;
 
-        // shader
+        // Shader
         shared_ptr<Shader> m_shader;
 };
 

@@ -1,6 +1,8 @@
 #include "mesh.hpp"
+#include "viewer.hpp"
 
-Mesh::Mesh(const shared_ptr<Shader> shader): m_shader(shader) {
+Mesh::Mesh(const shared_ptr<Shader> shader): m_shader(shader), 
+    m_model_mat(glm::mat4(1.0f)) {
     float vertices[] = {
         0.5f,  0.5f, 0.0f,  // top right
         0.5f, -0.5f, 0.0f,  // bottom right
@@ -43,10 +45,14 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &m_ebo);
 }
 
-void Mesh::draw(float time) const {
+void Mesh::draw(const Viewer& viewer, float time) const {
     m_shader->bind();
 
     m_shader->sendUniform1f("time", time);
+
+    m_shader->sendUniformMatrix4fv("model", m_model_mat);
+    m_shader->sendUniformMatrix4fv("view", viewer.getViewMatrix());
+    m_shader->sendUniformMatrix4fv("projection", viewer.getProjectionMatrix());
 
     // bind the VAO before drawing
     glBindVertexArray(m_vao);

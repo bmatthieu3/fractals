@@ -8,6 +8,8 @@
 
 #include "shader.hpp"
 #include "mesh.hpp"
+#include "settings.hpp"
+#include "viewer.hpp"
 
 using namespace std;
 void processInput(GLFWwindow *window)
@@ -24,10 +26,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
-// settings
-const unsigned int SCR_WIDTH = 800;
-const unsigned int SCR_HEIGHT = 600;
 
 class App {
     public:
@@ -94,12 +92,12 @@ class App {
 
                 // render
                 // ------
-                glClearColor(0.2f, 0.3f, 0.3f, 1.0f);
+                glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT);
                 float time = glfwGetTime();
 
                 for(uint32_t i = 0; i < m_meshes.size(); i++) {
-                    m_meshes[i]->draw(time);
+                    m_meshes[i]->draw(m_viewer, time);
                 }
         
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -112,6 +110,7 @@ class App {
     private:
         bool m_closed;
         GLFWwindow* window;
+        Viewer m_viewer;
 
         map<string, shared_ptr<Shader>> m_shaders;
 

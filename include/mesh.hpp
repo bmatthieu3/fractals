@@ -17,6 +17,7 @@
 #include <glm/ext/matrix_transform.hpp> // perspective, translate, rotate
 
 #include "shader.hpp"
+#include "viewer.hpp"
 
 using namespace std;
 using namespace glm;
@@ -41,7 +42,7 @@ class Mesh {
         Mesh(const shared_ptr<Shader> shader);
         ~Mesh();
 
-        void draw(float time) const;
+        void draw(const Viewer& viewer, float time) const;
 
     private:
         // Vertex Array Object

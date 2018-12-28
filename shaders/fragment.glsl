@@ -1,10 +1,12 @@
 #version 330 core
-out vec4 FragColor;
+out vec4 color;
+in vec2 txc;
 
 uniform float time;
 
+uniform sampler2D texdata;
+
 void main()
 {
-    float red = (sin(time*5.f)/2.f) + 0.5f;
-    FragColor = vec4(red, 0.f, 0.f, 1.0f);
+    color = texture(texdata, txc);
 } 

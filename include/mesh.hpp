@@ -29,6 +29,9 @@ struct Vertex {
 };
 
 struct Material {
+    Material();
+    ~Material();
+
     GLuint texture_id;
 
     vec3 ambiant;
@@ -57,6 +60,9 @@ class Mesh {
 
         // Shader
         shared_ptr<Shader> m_shader;
+
+        // Material
+        Material m_material;
 };
 
 #endif

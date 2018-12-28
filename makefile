@@ -1,6 +1,7 @@
 
 CXX=g++
 CXXFLAGS=
+OS=$(shell uname)
 ifeq ($(OS),Darwin)
 	LDFLAGS=-lglfw3 -framework OpenGL -lpthread -ldl
 else

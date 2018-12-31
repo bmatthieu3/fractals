@@ -1,9 +1,8 @@
-
 CXX=g++
-CXXFLAGS=
+CXXFLAGS=-std=c++1z
 OS=$(shell uname)
 ifeq ($(OS),Darwin)
-	LDFLAGS=-lglfw3 -framework OpenGL -lpthread -ldl
+	LDFLAGS=-lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -lpthread -ldl
 else
 	LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif

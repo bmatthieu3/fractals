@@ -29,23 +29,30 @@ struct Vertex {
 };
 
 struct Material {
-    Material();
-    ~Material();
-
-    GLuint texture_id;
-
-    vec3 ambiant;
-    vec3 diffuse;
-    vec3 specular;
     float shininess;
+};
+
+struct Texture {
+    Texture();
+    Texture(const string& pFile, const string& textureType);
+    ~Texture();
+
+    GLuint id;
+    string type;
+    string path;
 };
 
 class Mesh {
     public:
-        Mesh(const shared_ptr<Shader> shader);
+        Mesh(const vector<Vertex>& vertices,
+            const vector<shared_ptr<Texture>>& textures,
+            const vector<uint32_t>& indices,
+            const Material& material);
         ~Mesh();
 
-        void draw(const Viewer& viewer, float time) const;
+        void draw(const shared_ptr<Shader> shader, const Viewer& viewer, float time) const;
+
+        glm::mat4& getModelMatrix();
 
     private:
         // Vertex Array Object
@@ -61,6 +68,9 @@ class Mesh {
         // Shader
         shared_ptr<Shader> m_shader;
 
+        vector<uint32_t> m_indices;
+        vector<shared_ptr<Texture>> m_textures;
+        vector<Vertex> m_vertices;
         // Material
         Material m_material;
 };

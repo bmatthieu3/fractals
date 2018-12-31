@@ -4,10 +4,11 @@
 #include <iostream>
 #include <map>
 #include <string>
+#include <vector>
 #include <fstream>
 
 #include "shader.hpp"
-#include "mesh.hpp"
+#include "model.hpp"
 #include "settings.hpp"
 #include "viewer.hpp"
 
@@ -72,8 +73,9 @@ class App {
             m_shaders.insert(pair<string, shared_ptr<Shader>>("textured", textured));
 
             // Loading meshes
-            unique_ptr<Mesh> mesh = make_unique<Mesh>(m_shaders["textured"]);
-            m_meshes.push_back(std::move(mesh));
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "scene.fbx");
+            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.5f)));
+            m_models.push_back(std::move(nanosuit));
         }
 
         ~App() {
@@ -95,9 +97,8 @@ class App {
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT);
                 float time = glfwGetTime();
-
-                for(uint32_t i = 0; i < m_meshes.size(); i++) {
-                    m_meshes[i]->draw(m_viewer, time);
+                for(uint32_t i = 0; i < m_models.size(); i++) {
+                    m_models[i]->draw(m_viewer, time);
                 }
         
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -114,7 +115,7 @@ class App {
 
         map<string, shared_ptr<Shader>> m_shaders;
 
-        vector<unique_ptr<Mesh>> m_meshes;
+        std::vector<unique_ptr<Model>> m_models;
 };
 
 int main(void)

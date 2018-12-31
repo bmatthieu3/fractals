@@ -98,6 +98,13 @@ void Shader::sendUniform1f(const std::string& attribute, float data) const {
     glUniform1f(dataLocation, data);
 }
 
+void Shader::sendUniform1i(const std::string& attribute, unsigned int data) const {
+    int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
+    if(dataLocation != -1) {
+        glUniform1i(dataLocation, data);
+    }
+}
+
 void Shader::sendUniform4f(const std::string& attribute, const glm::vec4& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
     glUniform4fv(dataLocation, 1, glm::value_ptr(data));

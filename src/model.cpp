@@ -5,6 +5,9 @@
 #include <iostream>
 #include <memory>
 #include <string>
+#include <sstream>
+#include <iterator>
+#include <algorithm>
 
 #include "stb_image.h"
 #include "mesh.hpp"
@@ -15,10 +18,27 @@ static vector<shared_ptr<Texture>> loadedTextures;
 Model::Model() {
 }
 
+const std::string extractDirectoryFromPath(const std::string& path) {
+    std::stringstream ss(path);
+
+    std::string token;
+    std::vector<string> slicedPath;
+    while(std::getline(ss, token, '/')) {
+        slicedPath.push_back(token);
+    }
+    std::ostringstream imploded;
+    std::copy(slicedPath.begin(), slicedPath.end() - 1,
+        std::ostream_iterator<std::string>(imploded, "/"));
+
+    return imploded.str();
+} 
+
 Model::Model(const shared_ptr<Shader> shader, const std::string& path): m_shader(shader) {
     // Create an instance of the Importer class
     Assimp::Importer importer;
-    m_scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_FlipUVs);
+    m_directory_path = extractDirectoryFromPath(path);
+
+    m_scene = importer.ReadFile(path, aiProcess_Triangulate);
     // If the import failed, report it
     if(!m_scene) {
         std::cout << importer.GetErrorString() << std::endl;
@@ -96,22 +116,21 @@ vector<shared_ptr<Texture>> Model::loadTextureMap(const aiMaterial* material, ai
     for(uint32_t i = 0; i < material->GetTextureCount(type); ++i) {
         aiString path;
         material->GetTexture(type, i, &path);
-        const string& path_str = path.C_Str();
+        const string& path_str = m_directory_path + path.C_Str();
 
         // Check if the texture has already been loaded or not
         bool alreadyLoaded = false;
         std::shared_ptr<Texture> texture = nullptr;
-        for(uint32_t j = 0; j < loadedTextures.size(); ++j) {
-            const std::shared_ptr<Texture> loadedTexture = loadedTextures[j];
-            if(loadedTexture->path == path_str) {
+        for(uint32_t j = 0; j < loadedTextures.size(); j++) {
+            const shared_ptr<Texture> loadedTex = loadedTextures[j];
+            if(loadedTex->path == path_str) {
+                texture = loadedTex;
                 alreadyLoaded = true;
-                texture = loadedTexture;
                 break;
             }
         }
         if(!alreadyLoaded) {
-            texture = std::make_shared<Texture>(path_str, name);
-            loadedTextures.push_back(texture);
+            texture = make_shared<Texture>(path_str, name);
         }
         textures.push_back(texture);
     }
@@ -119,8 +138,7 @@ vector<shared_ptr<Texture>> Model::loadTextureMap(const aiMaterial* material, ai
 }
 
 void Model::draw(const Viewer& viewer, float time) {
-    std::cout << m_meshes.size() << std::endl;
-    for(uint32_t i = 0; i < 1; ++i) {
+    for(uint32_t i = 0; i < m_meshes.size(); ++i) {
         const std::unique_ptr<Mesh>& mesh = m_meshes[i];
         mesh->draw(m_shader, viewer, time);
     }

@@ -65,9 +65,6 @@ class Mesh {
         // Attributes
         mat4 m_model_mat;
 
-        // Shader
-        shared_ptr<Shader> m_shader;
-
         vector<uint32_t> m_indices;
         vector<shared_ptr<Texture>> m_textures;
         vector<Vertex> m_vertices;

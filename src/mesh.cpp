@@ -23,7 +23,14 @@ Texture::Texture(const string& pFile, const string& textureType):
     int width, height, nrChannels;
     unsigned char *data = stbi_load(path.c_str(), &width, &height, &nrChannels, 0);
     if (data) {
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, data);
+        GLenum format;
+        if (nrChannels == 1)
+            format = GL_RED;
+        else if (nrChannels == 3)
+            format = GL_RGB;
+        else if (nrChannels == 4)
+            format = GL_RGBA;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
     } else {
         std::cout << "Failed to load texture at: " << path << std::endl;
@@ -56,13 +63,13 @@ Mesh::Mesh(const vector<Vertex>& vertices,
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(uint32_t), m_indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Vertex::position));
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Vertex::normal));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(glm::vec3)));
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, Vertex::texcoord));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(2 * sizeof(glm::vec3)));
     glEnableVertexAttribArray(2);
 
     // note that this is allowed, the call to glVertexAttribPointer registered m_vbo as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
@@ -83,7 +90,6 @@ Mesh::~Mesh() {
 }
 
 void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float time) const {
-    std::cout << "Draw new mesh" << std::endl;
     shader->bind();
 
     shader->sendUniform1f("time", time);
@@ -92,9 +98,9 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
     shader->sendUniformMatrix4fv("view", viewer.getViewMatrix());
     shader->sendUniformMatrix4fv("projection", viewer.getProjectionMatrix());
 
-    uint32_t idDiffuseTex = 0;
-    uint32_t idSpecularTex = 0;
-    uint32_t idNormalTex = 0;
+    uint32_t idDiffuseTex = 1;
+    uint32_t idSpecularTex = 1;
+    uint32_t idNormalTex = 1;
     for(unsigned int i = 0; i < m_textures.size(); ++i) {
         glActiveTexture(GL_TEXTURE0 + i);
 
@@ -109,16 +115,9 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
             id = std::to_string(idNormalTex++);
         }
         // Tell the GPU that the current active texture refers to the uniform "type + id"
-        const string& attribute = type;
-        std::cout << attribute << " " << texture->id << std::endl;
-        glUniform1i(glGetUniformLocation(m_shader->getProgram(), attribute.c_str()), i);
+        const string& attribute = type + id;
+        shader->sendUniform1i(attribute.c_str(), i);
         glBindTexture(GL_TEXTURE_2D, texture->id);
-        
-        /*if(attribute == "tex_diffuse") {
-            glUniform1i(glGetUniformLocation(m_shader->getProgram(), attribute.c_str()), i);
-            glBindTexture(GL_TEXTURE_2D, texture->id);
-            break;
-        }*/
     }
     // bind the VAO before drawing
     glBindVertexArray(m_vao);
@@ -127,7 +126,6 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
 
     // setting back the active texture to its original
     glActiveTexture(GL_TEXTURE0);
-    std::cout << "Finish draw new mesh " << idDiffuseTex << " " << idSpecularTex << " " << idNormalTex << std::endl;
 }
 
 glm::mat4& Mesh::getModelMatrix() {

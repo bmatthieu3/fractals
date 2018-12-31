@@ -90,7 +90,7 @@ void Shader::unbind() const {
 }
 
 GLuint Shader::getProgram() const {
-    return this->m_program;
+    return m_program;
 }
 
 void Shader::sendUniform1f(const std::string& attribute, float data) const {

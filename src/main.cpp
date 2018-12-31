@@ -11,6 +11,7 @@
 #include "model.hpp"
 #include "settings.hpp"
 #include "viewer.hpp"
+#include "stb_image.h"
 
 using namespace std;
 void processInput(GLFWwindow *window)
@@ -67,14 +68,19 @@ class App {
                 std::cout << "Failed to initialize GLAD" << std::endl;
                 return;
             }
+            // configure global opengl state
+            glEnable(GL_DEPTH_TEST);
+            // Tell stbi to flip the y-axis of the loaded image.
+            stbi_set_flip_vertically_on_load(true);
 
             // Loading shaders
-            shared_ptr<Shader> textured = make_shared<Shader>("shaders/vertex.glsl", "shaders/fragment.glsl");
+            shared_ptr<Shader> textured = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/fragment.glsl");
             m_shaders.insert(pair<string, shared_ptr<Shader>>("textured", textured));
 
             // Loading meshes
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "scene.fbx");
-            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.5f)));
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "../resources/nanosuit/nanosuit.obj");
+            
+            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.20f)));
             m_models.push_back(std::move(nanosuit));
         }
 
@@ -95,7 +101,7 @@ class App {
                 // render
                 // ------
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
-                glClear(GL_COLOR_BUFFER_BIT);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 float time = glfwGetTime();
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->draw(m_viewer, time);

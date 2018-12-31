@@ -73,14 +73,18 @@ class App {
             // Tell stbi to flip the y-axis of the loaded image.
             stbi_set_flip_vertically_on_load(true);
 
+            // Set camera movement
+            unique_ptr<CircleMovement> movement = make_unique<CircleMovement>(glm::vec3(0.f), 5, 5.f);
+            m_viewer.applyMovement(std::move(movement));
+
             // Loading shaders
             shared_ptr<Shader> textured = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/fragment.glsl");
             m_shaders.insert(pair<string, shared_ptr<Shader>>("textured", textured));
 
             // Loading meshes
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "../resources/nanosuit/nanosuit.obj");
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "../resources/skeleton_animated/scene.gltf");
             
-            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.20f)));
+            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.4f)));
             m_models.push_back(std::move(nanosuit));
         }
 
@@ -94,15 +98,18 @@ class App {
             // -----------
             while (!glfwWindowShouldClose(window))
             {
+                float time = glfwGetTime();
                 // input
                 // -----
                 processInput(window);
 
+                // update
+                // ------
+                m_viewer.update(time);
                 // render
                 // ------
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-                float time = glfwGetTime();
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->draw(m_viewer, time);
                 }
@@ -126,7 +133,7 @@ class App {
 
 int main(void)
 {	
-    App app("Curse Engine");
+    App app("Asia Engine");
     app.run();
 	
     return 0;

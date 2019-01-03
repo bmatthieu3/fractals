@@ -51,7 +51,7 @@ class App {
             glfwWindowHint(GLFW_GREEN_BITS, mode->greenBits);
             glfwWindowHint(GLFW_BLUE_BITS, mode->blueBits);
             glfwWindowHint(GLFW_REFRESH_RATE, mode->refreshRate);
-            window = glfwCreateWindow(mode->width, mode->height, name.c_str(), primary, NULL);
+            window = glfwCreateWindow(800, 600, name.c_str(), NULL, NULL);
             if (window == NULL)
             {
                 std::cout << "Failed to create GLFW window" << std::endl;
@@ -78,14 +78,24 @@ class App {
             m_viewer.applyMovement(std::move(movement));
 
             // Loading shaders
-            shared_ptr<Shader> textured = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/fragment.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("textured", textured));
+            shared_ptr<Shader> animated = make_shared<Shader>("../shaders/vertex_anim.glsl", "../shaders/frag_textured.glsl");
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("animated-model", animated));
+            shared_ptr<Shader> simple = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/frag_colored.glsl");
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("primitive", simple));
 
             // Loading meshes
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["textured"], "../resources/skeleton_animated/scene.gltf");
+            /*unique_ptr<Model> bob = make_unique<Model>(m_shaders["textured"], "../resources/Content/boblampclean.md5mesh");
             
-            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.4f)));
+            bob->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.05f)));
+            m_models.push_back(std::move(bob));*/
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["animated-model"], "../resources/nanosuit/nanosuit.obj");
+            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.2f)));
             m_models.push_back(std::move(nanosuit));
+            
+            Material material = Material {0.1};
+            unique_ptr<Mesh> plane = Mesh::createPlane(material);
+            plane->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(10.f)));
+            m_primitives.push_back(std::move(plane));
         }
 
         ~App() {
@@ -106,12 +116,18 @@ class App {
                 // update
                 // ------
                 m_viewer.update(time);
+                for(uint32_t i = 0; i < m_models.size(); i++) {
+                    m_models[i]->update(time);
+                }
                 // render
                 // ------
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->draw(m_viewer, time);
+                }
+                for(uint32_t i = 0; i < m_primitives.size(); i++) {
+                    m_primitives[i]->draw(m_shaders["primitive"], m_viewer, time);
                 }
         
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -129,6 +145,7 @@ class App {
         map<string, shared_ptr<Shader>> m_shaders;
 
         std::vector<unique_ptr<Model>> m_models;
+        vector<unique_ptr<Mesh>> m_primitives;
 };
 
 int main(void)

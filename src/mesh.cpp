@@ -1,10 +1,14 @@
 #include <iostream>
+#include <memory>
 
 #include <assimp/scene.h>           // Output data structure
+#include <glm/vec3.hpp>           // vec3
 
 #include "stb_image.h"
 #include "mesh.hpp"
 #include "viewer.hpp"
+
+using namespace glm;
 
 Texture::Texture() {
 }
@@ -32,10 +36,38 @@ Texture::Texture(const string& pFile, const string& textureType):
             format = GL_RGBA;
         glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
+        std::cout << path << " loaded" << std::endl;
     } else {
         std::cout << "Failed to load texture at: " << path << std::endl;
     }
     stbi_image_free(data);
+}
+
+Texture::Texture(const aiTexture* texture, const string& pFile, const string& textureType): 
+    path(pFile),
+    type(textureType) {
+    glGenTextures(1, &id);
+    glBindTexture(GL_TEXTURE_2D, id);
+    // set the texture wrapping/filtering options (on the currently bound texture object)
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    // load and generate the texture
+    unsigned char *data = (unsigned char*)texture->pcData;
+
+    if(texture->mHeight == 0) {
+        // TODO: decode compressed images, png and jpeg
+        std::cout << "uncompressed texture found " << texture->mWidth << std::endl;
+    }
+    if (data) {
+        GLenum format = GL_RGBA;
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, texture->mWidth, texture->mHeight, 0, format, GL_UNSIGNED_BYTE, data);
+        glGenerateMipmap(GL_TEXTURE_2D);
+        std::cout << type << " loaded" << std::endl;
+    } else {
+        std::cout << "Failed to load texture at: " << path << std::endl;
+    }
 }
 
 Texture::~Texture() {
@@ -49,7 +81,7 @@ Mesh::Mesh(const vector<Vertex>& vertices,
     m_textures(textures),
     m_indices(indices),
     m_material(material),
-    m_model_mat(glm::mat4(1.0f))
+    m_model(glm::mat4(1.0f))
  {
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
@@ -66,11 +98,17 @@ Mesh::Mesh(const vector<Vertex>& vertices,
     glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)0);
     glEnableVertexAttribArray(0);
 
-    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(sizeof(glm::vec3)));
+    glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, normal));
     glEnableVertexAttribArray(1);
 
-    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)(2 * sizeof(glm::vec3)));
+    glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
     glEnableVertexAttribArray(2);
+
+    glVertexAttribIPointer(3, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, idBones));
+    glEnableVertexAttribArray(3);
+
+    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights));
+    glEnableVertexAttribArray(4);
 
     // note that this is allowed, the call to glVertexAttribPointer registered m_vbo as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
@@ -94,7 +132,7 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
 
     shader->sendUniform1f("time", time);
 
-    shader->sendUniformMatrix4fv("model", m_model_mat);
+    shader->sendUniformMatrix4fv("model", m_model);
     shader->sendUniformMatrix4fv("view", viewer.getViewMatrix());
     shader->sendUniformMatrix4fv("projection", viewer.getProjectionMatrix());
 
@@ -129,5 +167,27 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
 }
 
 glm::mat4& Mesh::getModelMatrix() {
-    return m_model_mat;
+    return m_model;
+}
+
+std::unique_ptr<Mesh> Mesh::createPlane(const Material& material) {
+    vector<Vertex> vertices({
+        Vertex {vec3(0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
+        Vertex {vec3(-0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
+        Vertex {vec3(-0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
+        Vertex {vec3(0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)}
+    });
+    vector<shared_ptr<Texture>> textures;
+    vector<uint32_t> indices({
+        0, 1, 2,
+        0, 2, 3,
+    });
+
+    std::unique_ptr<Mesh> plane = std::make_unique<Mesh>(vertices, textures, indices, material);
+
+    return std::move(plane);
+}
+
+void Mesh::applyTransformation(const glm::mat4& transform) {
+    m_model = transform * m_model;
 }

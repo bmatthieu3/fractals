@@ -26,6 +26,9 @@ struct Vertex {
     vec3 position;
     vec3 normal;
     vec2 texcoord;
+
+    ivec4 idBones;
+    vec4 weights;
 };
 
 struct Material {
@@ -35,6 +38,7 @@ struct Material {
 struct Texture {
     Texture();
     Texture(const string& pFile, const string& textureType);
+    Texture(const aiTexture* texture, const string& pFile, const string& textureType);
     ~Texture();
 
     GLuint id;
@@ -52,7 +56,15 @@ class Mesh {
 
         void draw(const shared_ptr<Shader> shader, const Viewer& viewer, float time) const;
 
+        void applyTransformation(const glm::mat4& transform);
+        
         glm::mat4& getModelMatrix();
+
+        // Static methods for creating primitives
+        static unique_ptr<Mesh> createPlane(const Material& material);
+        static unique_ptr<Mesh> createSphere(const Material& material) {
+            return nullptr;
+        }
 
     private:
         // Vertex Array Object
@@ -63,7 +75,7 @@ class Mesh {
         unsigned int m_ebo;
 
         // Attributes
-        mat4 m_model_mat;
+        mat4 m_model;
 
         vector<uint32_t> m_indices;
         vector<shared_ptr<Texture>> m_textures;

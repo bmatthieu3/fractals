@@ -7,9 +7,14 @@ uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
 
-out vec2 txc;
+uniform mat4 viewLightSpace;
+uniform mat4 clipLightSpace;
+
+out vec2 tx;
+out vec4 posLightSpace;
 
 void main() {
     gl_Position = projection * view * model * vec4(pos, 1.0);
-    txc = texcoord;
+    tx = texcoord;
+    posLightSpace = clipLightSpace * viewLightSpace * model * vec4(pos, 1.0);
 }

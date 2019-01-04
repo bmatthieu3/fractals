@@ -10,12 +10,36 @@
 #include "viewer.hpp"
 #include "settings.hpp"
 
-Viewer::Viewer(): m_movement(nullptr),
-    m_center(glm::vec3(0.f)),
-    m_position(glm::vec3(5, 5, 5)) {
-    m_view_mat = glm::lookAt(m_position, m_center, glm::vec3(0, 1, 0));
+using namespace std;
 
-    m_projection_mat = glm::perspective(glm::radians(45.0f), (float)SCR_WIDTH / (float)SCR_HEIGHT, 0.1f, 100.0f);
+unique_ptr<Viewer> Viewer::createPerspectiveViewer(const glm::vec3& position,
+    const glm::vec3& center,
+    float fov,
+    float ratio,
+    float zNear,
+    float zFar 
+) {
+    unique_ptr<Viewer> viewer = make_unique<Viewer>(position, center);
+    viewer->m_projection_mat = glm::perspective(fov, ratio, zNear, zFar);
+
+    return std::move(viewer);
+}
+unique_ptr<Viewer> Viewer::createOrthoViewer(const glm::vec3& position,
+    const glm::vec3& center,
+    float halfSize,
+    float zNear,
+    float zFar 
+) {
+    unique_ptr<Viewer> viewer = make_unique<Viewer>(position, center);
+    viewer->m_projection_mat = glm::ortho(-halfSize, halfSize, -halfSize, halfSize, zNear, zFar);
+
+    return std::move(viewer);
+}
+
+Viewer::Viewer(const glm::vec3& position, const glm::vec3& center): m_movement(nullptr),
+    m_center(center),
+    m_position(position) {
+    m_view_mat = glm::lookAt(m_position, m_center, glm::vec3(0, 1, 0));
 }
 Viewer::~Viewer() {
 }

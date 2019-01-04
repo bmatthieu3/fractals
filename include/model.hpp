@@ -34,10 +34,12 @@ class Model {
         void update(float time);
         void updateNodeTransformMatrix(const aiNode* node);
 
-        void draw(const Viewer& viewer, float time);
+        void draw(const Viewer& viewer);
         void applyTransformation(const glm::mat4& transform);
 
         void setAnimation(size_t index);
+
+        const shared_ptr<Shader> getShader() const;
 
     private:
         void loadNode(const aiNode* node);

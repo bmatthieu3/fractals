@@ -7,8 +7,10 @@
 #include "stb_image.h"
 #include "mesh.hpp"
 #include "viewer.hpp"
+#include "settings.hpp"
 
 using namespace glm;
+using namespace std;
 
 Texture::Texture() {
 }
@@ -73,6 +75,27 @@ Texture::Texture(const aiTexture* texture, const string& pFile, const string& te
 Texture::~Texture() {
 }
 
+const shared_ptr<Texture> Texture::createDepthMap() {
+    shared_ptr<Texture> texture = make_shared<Texture>();
+    glGenTextures(1, &texture->id);
+    glBindTexture(GL_TEXTURE_2D, texture->id);
+    
+    // Clamp the depth map to white color so that the fragments outside the 
+    // the depth map of the light are never in a shadow region.
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_BORDER);	
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_BORDER);
+    GLfloat pBorderColor[4] = {1.f, 1.f, 1.f, 1.f}; 
+    glTexParameterfv(GL_TEXTURE_2D, GL_TEXTURE_BORDER_COLOR, pBorderColor);
+
+    // Nearest pixels filtering
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, SHADOW_WIDTH, SHADOW_HEIGHT, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+
+    return texture;
+}
+
 Mesh::Mesh(const vector<Vertex>& vertices,
            const vector<shared_ptr<Texture>>& textures,
            const vector<uint32_t>& indices,
@@ -127,11 +150,8 @@ Mesh::~Mesh() {
     glDeleteBuffers(1, &m_ebo);
 }
 
-void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float time) const {
-    shader->bind();
-
-    shader->sendUniform1f("time", time);
-
+// Important: We suppose the shader is currently bound and will be unbound after the call
+void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer) const {
     shader->sendUniformMatrix4fv("model", m_model);
     shader->sendUniformMatrix4fv("view", viewer.getViewMatrix());
     shader->sendUniformMatrix4fv("projection", viewer.getProjectionMatrix());
@@ -139,22 +159,24 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer, float tim
     uint32_t idDiffuseTex = 1;
     uint32_t idSpecularTex = 1;
     uint32_t idNormalTex = 1;
+
+    size_t numOffsetTextures = 1;
     for(unsigned int i = 0; i < m_textures.size(); ++i) {
-        glActiveTexture(GL_TEXTURE0 + i);
+        glActiveTexture(GL_TEXTURE0 + i + numOffsetTextures);
 
         const shared_ptr<Texture> texture = m_textures[i];
         const string& type = texture->type;
         string id;
-        if(type == "tex_diffuse") {
+        if(type == "diffuse_map") {
             id = std::to_string(idDiffuseTex++);
-        } else if(type == "tex_specular") {
+        } else if(type == "specular_map") {
             id = std::to_string(idSpecularTex++);
-        } else if(type == "tex_normals") {
+        } else if(type == "normal_map") {
             id = std::to_string(idNormalTex++);
         }
         // Tell the GPU that the current active texture refers to the uniform "type + id"
-        const string& attribute = type + id;
-        shader->sendUniform1i(attribute.c_str(), i);
+        const string& attribute = type;
+        shader->sendUniform1i(attribute.c_str(), i + numOffsetTextures);
         glBindTexture(GL_TEXTURE_2D, texture->id);
     }
     // bind the VAO before drawing

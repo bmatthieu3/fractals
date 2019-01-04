@@ -57,6 +57,10 @@ Model::Model(const shared_ptr<Shader> shader, const std::string& path): m_shader
 Model::~Model() {
 }
 
+const shared_ptr<Shader> Model::getShader() const {
+    return m_shader;
+}
+
 void Model::loadNode(const aiNode* node) {
     if(node) {
         for(uint32_t i = 0; i < node->mNumMeshes; ++i) {
@@ -165,11 +169,11 @@ void Model::createNewMesh(const aiMesh* mesh) {
     Material material;
     if(idMaterial >= 0) {
         const aiMaterial* mat = m_scene->mMaterials[mesh->mMaterialIndex];
-        const vector<shared_ptr<Texture>>& diffuseTextures = loadTextureMap(mat, aiTextureType_DIFFUSE, "tex_diffuse");
+        const vector<shared_ptr<Texture>>& diffuseTextures = loadTextureMap(mat, aiTextureType_DIFFUSE, "diffuse_map");
         textures.insert(textures.end(), diffuseTextures.begin(), diffuseTextures.end());
-        const vector<shared_ptr<Texture>>& specularTextures = loadTextureMap(mat, aiTextureType_SPECULAR, "tex_specular");
+        const vector<shared_ptr<Texture>>& specularTextures = loadTextureMap(mat, aiTextureType_SPECULAR, "specular_map");
         textures.insert(textures.end(), specularTextures.begin(), specularTextures.end());
-        const vector<shared_ptr<Texture>>& normalsTextures = loadTextureMap(mat, aiTextureType_NORMALS, "tex_normals");
+        const vector<shared_ptr<Texture>>& normalsTextures = loadTextureMap(mat, aiTextureType_NORMALS, "normal_map");
         textures.insert(textures.end(), normalsTextures.begin(), normalsTextures.end());
         
         mat->Get(AI_MATKEY_SHININESS, material.shininess);
@@ -219,10 +223,10 @@ vector<shared_ptr<Texture>> Model::loadTextureMap(const aiMaterial* material, ai
     return textures;
 }
 
-void Model::draw(const Viewer& viewer, float time) {
+void Model::draw(const Viewer& viewer) {
     for(uint32_t i = 0; i < m_meshes.size(); ++i) {
         const std::unique_ptr<Mesh>& mesh = m_meshes[i];
-        mesh->draw(m_shader, viewer, time);
+        mesh->draw(m_shader, viewer);
     }
 }
 

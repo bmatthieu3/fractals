@@ -16,6 +16,9 @@
 // Include GLM extension
 #include <glm/ext/matrix_transform.hpp> // perspective, translate, rotate
 
+// Include ASSIMP core features
+#include <assimp/scene.h>           // Output data structure
+
 #include "shader.hpp"
 #include "viewer.hpp"
 
@@ -37,13 +40,16 @@ struct Material {
 
 struct Texture {
     Texture();
-    Texture(const string& pFile, const string& textureType);
-    Texture(const aiTexture* texture, const string& pFile, const string& textureType);
+    Texture(const string& pFile, const string& textureType = "diffuse_map");
+    Texture(const aiTexture* texture, const string& pFile, const string& textureType = "diffuse_map");
     ~Texture();
 
-    GLuint id;
-    string type;
-    string path;
+    static const shared_ptr<Texture> createDepthMap();
+
+    public:
+        GLuint id;
+        string type;
+        string path;
 };
 
 class Mesh {
@@ -54,7 +60,7 @@ class Mesh {
             const Material& material);
         ~Mesh();
 
-        void draw(const shared_ptr<Shader> shader, const Viewer& viewer, float time) const;
+        void draw(const shared_ptr<Shader> shader, const Viewer& viewer) const;
 
         void applyTransformation(const glm::mat4& transform);
         

@@ -35,9 +35,11 @@ uniform sampler2D specular_map;
 uniform sampler2D normal_map;
 
 vec4 applyShadow(vec4 lightColor, vec4 shadowColor) {
-    // Change the pos in light space to Normalized Device Coordinates (between -1 and 1)
+    // Change the pos in light space to Normalized Device Coordinates (between [-1, 1])
     vec3 posLightNDCSpace = posLightSpace.xyz / posLightSpace.w;
+    // Mapping to [0, 1]
     vec3 depthTx = posLightNDCSpace * 0.5f + 0.5f;
+    // Store the depth of the current fragment to test
     float currentFragDepth = depthTx.z;
     
     float shadowFactor = 0.f;
@@ -56,14 +58,22 @@ vec4 applyShadow(vec4 lightColor, vec4 shadowColor) {
 
 void main() {
     // Normalize after the GPU's interpolation of normal
+    /*vec3 en = normalize(normalWorldSpace);
+    vec3 et = normalize(vec3(en.z, 0, -en.x));
+    vec3 eb = normalize(cross(en, et));
+
+    mat3 localToWorldSpace = mat3(et, eb, en);
+    vec3 normalLocalSpace = texture(normal_map, tx).rgb;
+    normalLocalSpace = 2.f * normalLocalSpace - 1.f;*/
     vec3 N = normalize(normalWorldSpace);
+
     vec3 L = -sun.dir;
     vec3 V = normalize(eyePositionWorldSpace - posWorldSpace);
 
     vec3 H = normalize(L + V);
 
-    float spec = max(pow(dot(N, H), 4.f * material.shininess), 0);
     float diff = max(dot(L, N), 0.f);
+    float spec = max(pow(dot(N, H), 4.f * material.shininess), 0);
     
     vec3 ambiantColor = sun.ambiant * texture(diffuse_map, tx).rgb;
     vec3 diffuseColor = sun.diffuse * diff * texture(diffuse_map, tx).rgb;
@@ -71,6 +81,6 @@ void main() {
 
     vec4 lightColor = vec4(ambiantColor + diffuseColor + specularColor, 1.0);
     vec4 shadowColor = vec4(lightColor.xyz * 0.5, 1.f);
-
+    //color = lightColor;
     color = applyShadow(lightColor, shadowColor); 
 }

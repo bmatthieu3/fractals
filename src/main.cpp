@@ -181,7 +181,7 @@ class App {
             shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
 
             // Send sun directional light
-            shader->sendUniform3f("sun.ambiant", glm::vec3(0.1));
+            shader->sendUniform3f("sun.ambiant", glm::vec3(0.3, 0.3, 0.3));
             shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 0.7, 0.6));
             shader->sendUniform3f("sun.specular", glm::vec3(1));
             shader->sendUniform3f("sun.dir", glm::normalize(glm::vec3(-1, -1, 1)));

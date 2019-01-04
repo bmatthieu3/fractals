@@ -103,8 +103,8 @@ class App {
             m_shaders.insert(pair<string, shared_ptr<Shader>>("primitive", simple));
             // Shader that draw a texture map onto a quad.
             // Useful for debugging purposes.
-            shared_ptr<Shader> quad = make_shared<Shader>("../shaders/vertex_screen.glsl", "../shaders/frag_depth_map.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("simple-screen", quad));
+            shared_ptr<Shader> debugShader = make_shared<Shader>("../shaders/vertex_screen.glsl", "../shaders/frag_depth_map.glsl");
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("debug", debugShader));
 
             // Loading meshes
             /*unique_ptr<Model> bob = make_unique<Model>(m_shaders["textured"], "../resources/Content/boblampclean.md5mesh");
@@ -151,7 +151,7 @@ class App {
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthFBO);
                 glClear(GL_DEPTH_BUFFER_BIT);
 
-                writeToCurrentFBO(*m_sunViewer, time);
+                writeToCurrentFBO(*m_sunViewer);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -160,7 +160,7 @@ class App {
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                writeToCurrentFBO(*m_mainViewer, time);
+                writeToCurrentFBO(*m_mainViewer);
                 //renderDebugTextureMap();
 
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
@@ -171,45 +171,46 @@ class App {
         }
 
     private:
-        void writeToCurrentFBO(const Viewer& viewer, float time) {
+        void sendGlobalUniformsToShader(const shared_ptr<Shader> shader) {
+            float time = glfwGetTime();
+            shader->sendUniform1f("time", time);
+            shader->sendUniform1i("screen_w", m_mode->width);
+            shader->sendUniform1i("screen_h", m_mode->height);
+
+            shader->sendUniformMatrix4fv("viewLightSpace", m_sunViewer->getViewMatrix());
+            shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
+
+            // Send sun directional light
+            shader->sendUniform3f("sun.ambiant", glm::vec3(0.1));
+            shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 0.7, 0.6));
+            shader->sendUniform3f("sun.specular", glm::vec3(1));
+            shader->sendUniform3f("sun.dir", glm::normalize(glm::vec3(-1, -1, 1)));
+
+            shader->sendUniform3f("eyePositionWorldSpace", m_mainViewer->getPosition());
+
+            glActiveTexture(GL_TEXTURE0);
+            shader->sendUniform1i("depth_map", 0);
+            glBindTexture(GL_TEXTURE_2D, m_depthMap->id);
+        }
+
+        void writeToCurrentFBO(const Viewer& viewer) {
             for(auto& model: m_models) {
                 const shared_ptr<Shader> shader = model->getShader();
                 shader->bind();
-                // Set global uniforms
-                shader->sendUniform1f("time", time);
-                shader->sendUniform1i("screen_w", m_mode->width);
-                shader->sendUniform1i("screen_h", m_mode->height);
-
-                shader->sendUniformMatrix4fv("viewLightSpace", m_sunViewer->getViewMatrix());
-                shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
-
-                glActiveTexture(GL_TEXTURE0);
-                shader->sendUniform1i("depth_map", 0);
-                glBindTexture(GL_TEXTURE_2D, m_depthMap->id);
-
+                sendGlobalUniformsToShader(shader);
                 model->draw(viewer);
             }
             const shared_ptr<Shader> primitiveShader = m_shaders["primitive"];
             for(auto& primitive: m_primitives) {
                 primitiveShader->bind();
-                // Set global uniforms
-                primitiveShader->sendUniform1f("time", time);
-                primitiveShader->sendUniform1i("screen_w", m_mode->width);
-                primitiveShader->sendUniform1i("screen_h", m_mode->height);
-                
-                primitiveShader->sendUniformMatrix4fv("viewLightSpace", m_sunViewer->getViewMatrix());
-                primitiveShader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
-                
-                glActiveTexture(GL_TEXTURE0);
-                primitiveShader->sendUniform1i("depth_map", 0);
-                glBindTexture(GL_TEXTURE_2D, m_depthMap->id);
-    
+                sendGlobalUniformsToShader(primitiveShader);
                 primitive->draw(primitiveShader, viewer);
             }
         }
 
         void renderDebugTextureMap() {
-            m_quad->draw(m_shaders["simple-screen"]);
+            const shared_ptr<Shader> debugShader = m_shaders["debug"];
+            m_quad->draw(debugShader);
         }
 
     private:

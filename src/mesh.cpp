@@ -155,6 +155,7 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer) const {
     shader->sendUniformMatrix4fv("model", m_model);
     shader->sendUniformMatrix4fv("view", viewer.getViewMatrix());
     shader->sendUniformMatrix4fv("projection", viewer.getProjectionMatrix());
+    shader->sendUniformMatrix4fv("nModel", glm::transpose(glm::inverse(m_model)));
 
     uint32_t idDiffuseTex = 1;
     uint32_t idSpecularTex = 1;
@@ -179,6 +180,9 @@ void Mesh::draw(const shared_ptr<Shader> shader, const Viewer& viewer) const {
         shader->sendUniform1i(attribute.c_str(), i + numOffsetTextures);
         glBindTexture(GL_TEXTURE_2D, texture->id);
     }
+
+    // Send the material to the shader
+    shader->sendUniform1f("material.shininess", m_material.shininess);
     // bind the VAO before drawing
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);

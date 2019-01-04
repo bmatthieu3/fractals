@@ -56,6 +56,9 @@ const glm::mat4& Viewer::getViewMatrix() const {
 const glm::mat4& Viewer::getProjectionMatrix() const {
     return m_projection_mat;
 }
+const glm::vec3& Viewer::getPosition() const {
+    return m_position;
+}
 void Viewer::update(float time) {
     if(m_movement) {
         m_movement->update(*this, time);

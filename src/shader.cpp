@@ -95,7 +95,9 @@ GLuint Shader::getProgram() const {
 
 void Shader::sendUniform1f(const std::string& attribute, float data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
-    glUniform1f(dataLocation, data);
+    if(dataLocation != -1) {
+        glUniform1f(dataLocation, data);
+    }
 }
 
 void Shader::sendUniform1i(const std::string& attribute, unsigned int data) const {
@@ -105,12 +107,23 @@ void Shader::sendUniform1i(const std::string& attribute, unsigned int data) cons
     }
 }
 
+void Shader::sendUniform3f(const std::string& attribute, const glm::vec3& data) const {
+    int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
+    if(dataLocation != -1) {
+        glUniform3fv(dataLocation, 1, glm::value_ptr(data));
+    } 
+}
+
 void Shader::sendUniform4f(const std::string& attribute, const glm::vec4& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
-    glUniform4fv(dataLocation, 1, glm::value_ptr(data));
+    if(dataLocation != -1) {
+        glUniform4fv(dataLocation, 1, glm::value_ptr(data));
+    }
 }
 
 void Shader::sendUniformMatrix4fv(const std::string& attribute, const glm::mat4& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
-    glUniformMatrix4fv(dataLocation, 1, GL_FALSE, glm::value_ptr(data));
+    if(dataLocation != -1) {
+        glUniformMatrix4fv(dataLocation, 1, GL_FALSE, glm::value_ptr(data));
+    }
 }

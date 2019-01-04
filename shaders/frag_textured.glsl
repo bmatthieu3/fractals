@@ -32,7 +32,9 @@ vec4 applyShadow(vec4 lightColor, vec4 shadowColor) {
 }
 
 void main() {
-    vec4 shadowColor = vec4(0.f, 0.f, 0.f, 1.f);
+    
     vec4 lightColor = texture(diffuse_map, tx);
+    vec4 shadowColor = vec4(lightColor.xyz * 0.5, 1.f);
+    
     color = applyShadow(lightColor, shadowColor); 
 }

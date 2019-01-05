@@ -2,23 +2,25 @@
 out vec4 color;
 
 in vec4 posLightSpace;
-in vec3 posWorldSpace;
-
 in vec2 tx;
-in vec3 normalWorldSpace;
+in vec3 posFragLocalSpace;
+in vec3 posEyeLocalSpace;
+in vec3 lightDirectionLocalSpace;
+in mat3 TBNLocalToWorld;
 
-uniform float time;
-uniform int screen_w;
-uniform int screen_h;
-uniform vec3 eyePositionWorldSpace;
-
-uniform sampler2D depth_map;
-
+// Local uniforms
 struct Material {
     float shininess;
 };
 
 uniform Material material;
+
+// Global uniforms
+uniform float time;
+uniform int screen_w;
+uniform int screen_h;
+
+uniform sampler2D depth_map;
 
 struct DirectionalLight {
     vec3 ambiant;
@@ -55,21 +57,28 @@ vec4 applyShadow(vec4 lightColor, vec4 shadowColor) {
 
     return mix(lightColor, shadowColor, shadowFactor);
 }
+vec4 applyShadowNoPCF(vec4 lightColor, vec4 shadowColor) {
+    // Change the pos in light space to Normalized Device Coordinates (between [-1, 1])
+    vec3 posLightNDCSpace = posLightSpace.xyz / posLightSpace.w;
+    // Mapping to [0, 1]
+    vec3 depthTx = posLightNDCSpace * 0.5f + 0.5f;
+    // Store the depth of the current fragment to test
+    float currentFragDepth = depthTx.z;
+    float storedDepth = texture(depth_map, depthTx.xy).r;
+    
+    float shadowFactor = (storedDepth + 0.001 < currentFragDepth) ? 1.f : 0.f;
+
+    return mix(lightColor, shadowColor, shadowFactor);
+}
 
 void main() {
     // Normalize after the GPU's interpolation of normal
-    /*vec3 en = normalize(normalWorldSpace);
-    vec3 et = normalize(vec3(en.z, 0, -en.x));
-    vec3 eb = normalize(cross(en, et));
-
-    mat3 localToWorldSpace = mat3(et, eb, en);
     vec3 normalLocalSpace = texture(normal_map, tx).rgb;
-    normalLocalSpace = 2.f * normalLocalSpace - 1.f;*/
-    vec3 N = normalize(normalWorldSpace);
+    normalLocalSpace = 2.f * normalLocalSpace - 1.f;
+    vec3 N = normalize(normalLocalSpace);
 
-    vec3 L = -sun.dir;
-    vec3 V = normalize(eyePositionWorldSpace - posWorldSpace);
-
+    vec3 L = normalize(lightDirectionLocalSpace);
+    vec3 V = normalize(posEyeLocalSpace - posFragLocalSpace);
     vec3 H = normalize(L + V);
 
     float diff = max(dot(L, N), 0.f);
@@ -79,8 +88,12 @@ void main() {
     vec3 diffuseColor = sun.diffuse * diff * texture(diffuse_map, tx).rgb;
     vec3 specularColor = sun.specular * spec * texture(specular_map, tx).rgb;
 
-    vec4 lightColor = vec4(ambiantColor + diffuseColor + specularColor, 1.0);
-    vec4 shadowColor = vec4(lightColor.xyz * 0.5, 1.f);
+    float K = 10;
+    vec4 lightColor = K*vec4(ambiantColor + diffuseColor + specularColor, 1.0);
+    vec4 shadowColor = vec4(vec3(0.1), 1.f);
     //color = lightColor;
-    color = applyShadow(lightColor, shadowColor); 
+    color = applyShadowNoPCF(lightColor, shadowColor); 
+    //color = applyShadow(vec4(1, 1, 0, 1), shadowColor); 
+
+    //color = vec4(TBNLocalToWorld*N*0.5 + 0.5, 1.f);
 }

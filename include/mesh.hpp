@@ -30,6 +30,11 @@ struct Vertex {
     vec3 normal;
     vec2 texcoord;
 
+    // Normal mapping tangent expressed in object-space.
+    vec3 tangent;
+    vec3 bitangent;
+
+    // Performing animation computation in vertex shader
     ivec4 idBones;
     vec4 weights;
 };
@@ -85,7 +90,6 @@ class Mesh {
 
         vector<uint32_t> m_indices;
         vector<shared_ptr<Texture>> m_textures;
-        vector<Vertex> m_vertices;
         // Material
         Material m_material;
 };

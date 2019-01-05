@@ -94,7 +94,7 @@ class App {
 
             // Set camera movement
             unique_ptr<CircleMovement> movement = make_unique<CircleMovement>(glm::vec3(0.f), 5, 5.f);
-            m_mainViewer->applyMovement(std::move(movement));
+            m_sunViewer->applyMovement(std::move(movement));
 
             // Loading shaders
             shared_ptr<Shader> animated = make_shared<Shader>("../shaders/vertex_anim.glsl", "../shaders/frag_textured.glsl");
@@ -140,7 +140,7 @@ class App {
 
                 // update
                 // ------
-                m_mainViewer->update(time);
+                m_sunViewer->update(time);
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->update(time);
                 }
@@ -181,12 +181,12 @@ class App {
             shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
 
             // Send sun directional light
-            shader->sendUniform3f("sun.ambiant", glm::vec3(0.3, 0.3, 0.3));
-            shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 0.7, 0.6));
+            shader->sendUniform3f("sun.ambiant", glm::vec3(0.5, 0.5, 0.5));
+            shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 1.0, 1.0));
             shader->sendUniform3f("sun.specular", glm::vec3(1));
-            shader->sendUniform3f("sun.dir", glm::normalize(glm::vec3(-1, -1, 1)));
+            shader->sendUniform3f("sun.dir", m_sunViewer->getSightDirection());
 
-            shader->sendUniform3f("eyePositionWorldSpace", m_mainViewer->getPosition());
+            shader->sendUniform3f("eyeWorldSpace", m_mainViewer->getPosition());
 
             glActiveTexture(GL_TEXTURE0);
             shader->sendUniform1i("depth_map", 0);

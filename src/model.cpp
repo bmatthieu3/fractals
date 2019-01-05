@@ -40,7 +40,7 @@ Model::Model(const shared_ptr<Shader> shader, const std::string& path): m_shader
     Assimp::Importer importer;
     m_directory_path = extractDirectoryFromPath(path);
 
-    m_scene = importer.ReadFile(path, aiProcess_Triangulate);
+    m_scene = importer.ReadFile(path, aiProcess_Triangulate | aiProcess_CalcTangentSpace);
     // If the import failed, report it
     if(!m_scene) {
         std::cout << importer.GetErrorString() << std::endl;
@@ -118,13 +118,25 @@ void Model::createNewMesh(const aiMesh* mesh) {
         const aiVector3D& posVector = mesh->mVertices[i];
         glm::vec3 pos = glm::vec3(posVector.x, posVector.y, posVector.z);
 
-        glm::vec3 normal = glm::vec3(0.f);
+        glm::vec3 normal(0.f);
         if(mesh->HasNormals()) {
             const aiVector3D& normalVector = mesh->mNormals[i];
             normal = glm::vec3(normalVector.x, normalVector.y, normalVector.z);
         }
 
-        glm::vec2 texcoord = glm::vec2(0.f);
+        glm::vec3 tangent(0.f);
+        glm::vec3 bitangent(0.f);
+        if(mesh->HasTangentsAndBitangents()) {
+            const aiVector3D& tangentVector = mesh->mTangents[i];
+            tangent = glm::vec3(tangentVector.x, tangentVector.y, tangentVector.z);
+
+            const aiVector3D& bitangentVector = mesh->mBitangents[i];
+            bitangent.x = bitangentVector.x;
+            bitangent.y = bitangentVector.y;
+            bitangent.z = bitangentVector.z;
+        }
+
+        glm::vec2 texcoord(0.f);
         if(mesh->HasTextureCoords(0)) {
             const aiVector3D& texcoordVector = mesh->mTextureCoords[0][i];
             texcoord = glm::vec2(texcoordVector.x, texcoordVector.y);
@@ -135,8 +147,8 @@ void Model::createNewMesh(const aiMesh* mesh) {
         // VertexWeight is a struct having two fields:
         // - an id of bone
         // - the weight associated with this id
-        glm::ivec4 idBones = glm::ivec4(0);
-        glm::vec4 weightStrongestBones = glm::vec4(0.f);
+        glm::ivec4 idBones(0);
+        glm::vec4 weightStrongestBones(0.f);
         if(mesh->HasBones()) {
             const vector<float>& weights = meshWeightMatrix[i];
             const vector<size_t>& ids = sort_indexes<float>(weights);
@@ -153,7 +165,7 @@ void Model::createNewMesh(const aiMesh* mesh) {
             }
         }
 
-        vertices.push_back(Vertex {pos, normal, texcoord, idBones, weightStrongestBones});
+        vertices.push_back(Vertex {pos, normal, texcoord, tangent, bitangent, idBones, weightStrongestBones});
     }
     vector<uint32_t> indices;
     for(uint32_t i = 0; i < mesh->mNumFaces; i++) {
@@ -173,7 +185,10 @@ void Model::createNewMesh(const aiMesh* mesh) {
         textures.insert(textures.end(), diffuseTextures.begin(), diffuseTextures.end());
         const vector<shared_ptr<Texture>>& specularTextures = loadTextureMap(mat, aiTextureType_SPECULAR, "specular_map");
         textures.insert(textures.end(), specularTextures.begin(), specularTextures.end());
-        const vector<shared_ptr<Texture>>& normalsTextures = loadTextureMap(mat, aiTextureType_NORMALS, "normal_map");
+        // aiTextureType_NORMALS is not used for .obj objects. We get the normal map from the aiTextureType_HEIGHT
+        // flag instead.
+        // TODO: see if it works for other formats, especially animated ones such as md5.
+        const vector<shared_ptr<Texture>>& normalsTextures = loadTextureMap(mat, aiTextureType_HEIGHT, "normal_map");
         textures.insert(textures.end(), normalsTextures.begin(), normalsTextures.end());
         
         mat->Get(AI_MATKEY_SHININESS, material.shininess);

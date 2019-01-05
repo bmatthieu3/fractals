@@ -36,7 +36,7 @@ Texture::Texture(const string& pFile, const string& textureType):
             format = GL_RGB;
         else if (nrChannels == 4)
             format = GL_RGBA;
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         std::cout << path << " loaded" << std::endl;
     } else {
@@ -100,7 +100,6 @@ Mesh::Mesh(const vector<Vertex>& vertices,
            const vector<shared_ptr<Texture>>& textures,
            const vector<uint32_t>& indices,
            const Material& material):
-    m_vertices(vertices),
     m_textures(textures),
     m_indices(indices),
     m_material(material),
@@ -113,7 +112,7 @@ Mesh::Mesh(const vector<Vertex>& vertices,
     glBindVertexArray(m_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, m_vertices.size() * sizeof(Vertex), m_vertices.data(), GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(Vertex), vertices.data(), GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(uint32_t), m_indices.data(), GL_STATIC_DRAW);
@@ -127,11 +126,17 @@ Mesh::Mesh(const vector<Vertex>& vertices,
     glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, texcoord));
     glEnableVertexAttribArray(2);
 
-    glVertexAttribIPointer(3, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, idBones));
+    glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, tangent));
     glEnableVertexAttribArray(3);
 
-    glVertexAttribPointer(4, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights));
+    glVertexAttribPointer(4, 3, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, bitangent));
     glEnableVertexAttribArray(4);
+
+    glVertexAttribIPointer(5, 4, GL_UNSIGNED_INT, sizeof(Vertex), (void*)offsetof(Vertex, idBones));
+    glEnableVertexAttribArray(5);
+
+    glVertexAttribPointer(6, 4, GL_FLOAT, GL_FALSE, sizeof(Vertex), (void*)offsetof(Vertex, weights));
+    glEnableVertexAttribArray(6);
 
     // note that this is allowed, the call to glVertexAttribPointer registered m_vbo as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
@@ -198,10 +203,10 @@ glm::mat4& Mesh::getModelMatrix() {
 
 std::unique_ptr<Mesh> Mesh::createPlane(const Material& material) {
     vector<Vertex> vertices({
-        Vertex {vec3(0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
-        Vertex {vec3(-0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
-        Vertex {vec3(-0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)},
-        Vertex {vec3(0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec4(0), vec4(0)}
+        Vertex {vec3(0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec3(0, 0, 1), vec3(1, 0, 0), vec4(0), vec4(0)},
+        Vertex {vec3(-0.5, 0, -0.5), vec3(0, 1, 0), vec2(0), vec3(0, 0, 1), vec3(1, 0, 0), vec4(0), vec4(0)},
+        Vertex {vec3(-0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec3(0, 0, 1), vec3(1, 0, 0), vec4(0), vec4(0)},
+        Vertex {vec3(0.5, 0, 0.5), vec3(0, 1, 0), vec2(0), vec3(0, 0, 1), vec3(1, 0, 0), vec4(0), vec4(0)}
     });
     vector<shared_ptr<Texture>> textures;
     vector<uint32_t> indices({

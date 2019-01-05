@@ -18,6 +18,7 @@ class Viewer {
         const glm::mat4& getProjectionMatrix() const;
 
         const glm::vec3& getPosition() const;
+        const glm::vec3& getSightDirection() const;
 
         void setPosition(const glm::vec3& position);
         void applyMovement(std::unique_ptr<Movement> movement);

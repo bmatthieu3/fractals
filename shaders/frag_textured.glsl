@@ -3,9 +3,10 @@ out vec4 color;
 
 in vec4 posLightSpace;
 in vec2 tx;
-in vec3 posFragLocalSpace;
-in vec3 posEyeLocalSpace;
-in vec3 lightDirectionLocalSpace;
+//in vec3 posFragLocalSpace;
+in vec4 posWorldSpace;
+//in vec3 posEyeLocalSpace;
+//in vec3 lightDirectionLocalSpace;
 in mat3 TBNLocalToWorld;
 
 // Local uniforms
@@ -19,6 +20,7 @@ uniform Material material;
 uniform float time;
 uniform int screen_w;
 uniform int screen_h;
+uniform vec3 eyeWorldSpace;
 
 uniform sampler2D depth_map;
 
@@ -74,11 +76,11 @@ vec4 applyShadowNoPCF(vec4 lightColor, vec4 shadowColor) {
 void main() {
     // Normalize after the GPU's interpolation of normal
     vec3 normalLocalSpace = texture(normal_map, tx).rgb;
-    normalLocalSpace = 2.f * normalLocalSpace - 1.f;
-    vec3 N = normalize(normalLocalSpace);
+    normalLocalSpace = normalize(2*normalLocalSpace - 1);
+    vec3 N = normalize(TBNLocalToWorld * normalLocalSpace);
 
-    vec3 L = normalize(lightDirectionLocalSpace);
-    vec3 V = normalize(posEyeLocalSpace - posFragLocalSpace);
+    vec3 L = normalize(-sun.dir);
+    vec3 V = normalize(eyeWorldSpace - vec3(posWorldSpace));
     vec3 H = normalize(L + V);
 
     float diff = max(dot(L, N), 0.f);
@@ -90,10 +92,14 @@ void main() {
 
     float K = 10;
     vec4 lightColor = K*vec4(ambiantColor + diffuseColor + specularColor, 1.0);
-    vec4 shadowColor = vec4(vec3(0.1), 1.f);
+    vec4 shadowColor = vec4(vec3(lightColor*0.05), 1.f);
     //color = lightColor;
-    color = applyShadowNoPCF(lightColor, shadowColor); 
+    color = applyShadow(lightColor, shadowColor); 
     //color = applyShadow(vec4(1, 1, 0, 1), shadowColor); 
+    //color = vec4(N*0.5 + 0.5, 1.f);
 
-    //color = vec4(TBNLocalToWorld*N*0.5 + 0.5, 1.f);
+    // Basic HDR
+    color = color / (color + vec4(1.f));
+    //float exposure = 1.f;
+    //color = 1.f - (exp(-color*exposure));
 }

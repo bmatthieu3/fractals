@@ -34,7 +34,7 @@ class App {
     public:
         App(const std::string& name) : m_closed(false) {
             m_mainViewer = Viewer::createPerspectiveViewer(glm::vec3(5, 5, 5), glm::vec3(0));
-            m_sunViewer = Viewer::createOrthoViewer(glm::vec3(5, 5, -5), glm::vec3(0), 5.f);
+            m_sunViewer = Viewer::createOrthoViewer(glm::vec3(8, 8, -8), glm::vec3(0), 10.f);
 
             // glfw: initialize and configure
             // ------------------------------
@@ -74,6 +74,9 @@ class App {
             }
             // configure global opengl state
             glEnable(GL_DEPTH_TEST);
+            //glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+            glEnable(GL_CULL_FACE);
+            glCullFace(GL_BACK);
             // Tell stbi to flip the y-axis of the loaded image.
             stbi_set_flip_vertically_on_load(true);
 
@@ -93,14 +96,14 @@ class App {
             glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
             // Set camera movement
-            unique_ptr<CircleMovement> movement = make_unique<CircleMovement>(glm::vec3(0.f), 5, 5.f);
+            unique_ptr<CircleMovement> movement = make_unique<CircleMovement>(glm::vec3(0.f), 8, 5.f);
             m_sunViewer->applyMovement(std::move(movement));
 
             // Loading shaders
             shared_ptr<Shader> animated = make_shared<Shader>("../shaders/vertex_anim.glsl", "../shaders/frag_textured.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("animated-model", animated));
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("animated", animated));
             shared_ptr<Shader> simple = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/frag_textured.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("primitive", simple));
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("static", simple));
             // Shader that draw a texture map onto a quad.
             // Useful for debugging purposes.
             shared_ptr<Shader> debugShader = make_shared<Shader>("../shaders/vertex_screen.glsl", "../shaders/frag_depth_map.glsl");
@@ -110,7 +113,7 @@ class App {
             /*unique_ptr<Model> bob = make_unique<Model>(m_shaders["textured"], "../resources/Content/boblampclean.md5mesh");
             bob->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.05f)));
             m_models.push_back(std::move(bob));*/
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["animated-model"], "../resources/nanosuit/nanosuit.obj");
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["static"], "../resources/nanosuit/nanosuit.obj");
             nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.2f)));
             m_models.push_back(std::move(nanosuit));
             
@@ -200,7 +203,7 @@ class App {
                 sendGlobalUniformsToShader(shader);
                 model->draw(viewer);
             }
-            const shared_ptr<Shader> primitiveShader = m_shaders["primitive"];
+            const shared_ptr<Shader> primitiveShader = m_shaders["static"];
             for(auto& primitive: m_primitives) {
                 primitiveShader->bind();
                 sendGlobalUniformsToShader(primitiveShader);

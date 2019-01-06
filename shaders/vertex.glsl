@@ -31,15 +31,16 @@ uniform DirectionalLight sun;
 out vec2 tx;
 out vec4 posLightSpace;
 
-out vec3 posFragLocalSpace;
-out vec3 posEyeLocalSpace;
-out vec3 lightDirectionLocalSpace;
+//out vec3 posFragLocalSpace;
+out vec4 posWorldSpace;
+//out vec3 posEyeLocalSpace;
+//out vec3 lightDirectionLocalSpace;
 out mat3 TBNLocalToWorld;
 
 void main() {
     gl_Position = projection * view * model * vec4(pos, 1.0);
     tx = texcoord;
-    vec4 posWorldSpace = model * vec4(pos, 1.f);
+    posWorldSpace = model * vec4(pos, 1.f);
     posLightSpace = clipLightSpace * viewLightSpace * posWorldSpace;
     
     vec3 normalWorldSpace = normalize(vec3(nModel * vec4(normal, 0.0)));
@@ -51,9 +52,9 @@ void main() {
     vec3 bitangentWorldSpace = normalize(vec3(nModel * vec4(bitangent, 0.0)));
 
     TBNLocalToWorld = mat3(tangentWorldSpace, bitangentWorldSpace, normalWorldSpace);
-    mat3 TBNWorldToLocal = transpose(TBNLocalToWorld);
+    //mat3 TBNWorldToLocal = transpose(TBNLocalToWorld);
 
-    lightDirectionLocalSpace = TBNWorldToLocal * (-sun.dir);
-    posEyeLocalSpace = TBNWorldToLocal * eyeWorldSpace;
-    posFragLocalSpace = TBNWorldToLocal * posWorldSpace.xyz;
+    //lightDirectionLocalSpace = TBNWorldToLocal * (-sun.dir);
+    //posEyeLocalSpace = TBNWorldToLocal * eyeWorldSpace;
+    //posFragLocalSpace = TBNWorldToLocal * posWorldSpace.xyz;
 }

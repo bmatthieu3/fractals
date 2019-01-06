@@ -36,7 +36,7 @@ Texture::Texture(const string& pFile, const string& textureType):
             format = GL_RGB;
         else if (nrChannels == 4)
             format = GL_RGBA;
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB, width, height, 0, format, GL_UNSIGNED_BYTE, data);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8, width, height, 0, format, GL_UNSIGNED_BYTE, data);
         glGenerateMipmap(GL_TEXTURE_2D);
         std::cout << path << " loaded" << std::endl;
     } else {

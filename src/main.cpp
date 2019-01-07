@@ -15,12 +15,33 @@
 #include "stb_image.h"
 
 using namespace std;
-void processInput(GLFWwindow *window)
+
+static float theta = 0.f;
+static float delta = 3.14f/2.f;
+
+void processInput(GLFWwindow *window, const GLFWvidmode* mode, Viewer& viewer)
 {
+    // Quit the program when pressing escape
     if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
         glfwSetWindowShouldClose(window, true);
-}
 
+    // Get the mouse position
+    double xpos, ypos;
+    glfwGetCursorPos(window, &xpos, &ypos);
+
+    glm::vec2 dx(xpos - mode->width/2, ypos - mode->height/2);
+    theta += 0.00006 * dx.x;
+    delta += 0.00006 * dx.y;
+    if(delta >= 3.14 - 0.1) {
+        delta = 3.14 - 0.1;
+    } else if(delta <= 0.1) {
+        delta = 0.1;
+    }
+    glm::vec3 dirCamera(-sin(theta)*sin(delta), cos(delta), cos(theta)*sin(delta));
+
+    viewer.setDirection(dirCamera);
+}
+ 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -33,7 +54,7 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 class App {
     public:
         App(const std::string& name) : m_closed(false) {
-            m_mainViewer = Viewer::createPerspectiveViewer(glm::vec3(5, 5, 5), glm::vec3(0));
+            m_mainViewer = Viewer::createPerspectiveViewer(glm::vec3(5, 2, 5), glm::vec3(0));
             m_sunViewer = Viewer::createOrthoViewer(glm::vec3(8, 8, -8), glm::vec3(0), 10.f);
 
             // glfw: initialize and configure
@@ -100,20 +121,20 @@ class App {
             m_sunViewer->applyMovement(std::move(movement));
 
             // Loading shaders
-            shared_ptr<Shader> animated = make_shared<Shader>("../shaders/vertex_anim.glsl", "../shaders/frag_textured.glsl");
+            shared_ptr<Shader> animated = make_shared<Shader>("./shaders/vertex_anim.glsl", "./shaders/frag_textured.glsl");
             m_shaders.insert(pair<string, shared_ptr<Shader>>("animated", animated));
-            shared_ptr<Shader> simple = make_shared<Shader>("../shaders/vertex.glsl", "../shaders/frag_textured.glsl");
+            shared_ptr<Shader> simple = make_shared<Shader>("./shaders/vertex.glsl", "./shaders/frag_textured.glsl");
             m_shaders.insert(pair<string, shared_ptr<Shader>>("static", simple));
             // Shader that draw a texture map onto a quad.
             // Useful for debugging purposes.
-            shared_ptr<Shader> debugShader = make_shared<Shader>("../shaders/vertex_screen.glsl", "../shaders/frag_depth_map.glsl");
+            shared_ptr<Shader> debugShader = make_shared<Shader>("./shaders/vertex_screen.glsl", "./shaders/frag_depth_map.glsl");
             m_shaders.insert(pair<string, shared_ptr<Shader>>("debug", debugShader));
 
             // Loading meshes
             /*unique_ptr<Model> bob = make_unique<Model>(m_shaders["textured"], "../resources/Content/boblampclean.md5mesh");
             bob->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.05f)));
             m_models.push_back(std::move(bob));*/
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["static"], "../resources/nanosuit/nanosuit.obj");
+            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["static"], "./resources/nanosuit/nanosuit.obj");
             nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.2f)));
             m_models.push_back(std::move(nanosuit));
             
@@ -124,6 +145,7 @@ class App {
 
             // Create a screen quad object
             m_quad = make_unique<ScreenQuad>(m_depthMap);
+            std::cout << "Init terminated successfully" << std::endl;
         }
 
         ~App() {
@@ -139,7 +161,7 @@ class App {
                 float time = glfwGetTime();
                 // input
                 // -----
-                processInput(window);
+                processInput(window, m_mode, *m_mainViewer);
 
                 // update
                 // ------
@@ -147,13 +169,13 @@ class App {
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->update(time);
                 }
+
                 // render
                 // ------
                 // Write onto the depth FBO
                 glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthFBO);
                 glClear(GL_DEPTH_BUFFER_BIT);
-
                 writeToCurrentFBO(*m_sunViewer);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -182,13 +204,12 @@ class App {
 
             shader->sendUniformMatrix4fv("viewLightSpace", m_sunViewer->getViewMatrix());
             shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
-
             // Send sun directional light
             shader->sendUniform3f("sun.ambiant", glm::vec3(0.5, 0.5, 0.5));
             shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 1.0, 1.0));
             shader->sendUniform3f("sun.specular", glm::vec3(1));
-            shader->sendUniform3f("sun.dir", m_sunViewer->getSightDirection());
 
+            shader->sendUniform3f("sun.dir", m_sunViewer->getSightDirection());
             shader->sendUniform3f("eyeWorldSpace", m_mainViewer->getPosition());
 
             glActiveTexture(GL_TEXTURE0);

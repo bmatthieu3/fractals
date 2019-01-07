@@ -73,6 +73,7 @@ Texture::Texture(const aiTexture* texture, const string& pFile, const string& te
 }
 
 Texture::~Texture() {
+    glDeleteTextures(1, &id);
 }
 
 const shared_ptr<Texture> Texture::createDepthMap() {

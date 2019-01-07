@@ -59,13 +59,16 @@ const glm::mat4& Viewer::getProjectionMatrix() const {
 const glm::vec3& Viewer::getPosition() const {
     return m_position;
 }
-const glm::vec3& Viewer::getSightDirection() const {
+glm::vec3 Viewer::getSightDirection() const {
     return glm::normalize(m_center - m_position);
 }
 void Viewer::update(float time) {
     if(m_movement) {
         m_movement->update(*this, time);
     }
+}
+void Viewer::setDirection(const glm::vec3& dir) {
+    m_view_mat = glm::lookAt(m_position, m_position + dir, glm::vec3(0.f, 1.f, 0.f));
 }
 
 CircleMovement::CircleMovement(const glm::vec3& center, float height, float radius): 
@@ -86,4 +89,13 @@ void CircleMovement::update(Viewer& viewer, float time) {
     glm::vec3 pos = glm::vec3(posX, m_height, posZ);
 
     viewer.setPosition(pos);
+}
+
+FirstPerson::FirstPerson() {
+}
+
+FirstPerson::~FirstPerson() {
+}
+
+void FirstPerson::update(Viewer& viewer, float time) {
 }

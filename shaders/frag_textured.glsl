@@ -38,37 +38,26 @@ uniform sampler2D diffuse_map;
 uniform sampler2D specular_map;
 uniform sampler2D normal_map;
 
-vec4 applyShadow(vec4 lightColor, vec4 shadowColor) {
+vec4 applyShadow(vec4 lightColor, vec4 shadowColor, vec3 normal) {
     // Change the pos in light space to Normalized Device Coordinates (between [-1, 1])
     vec3 posLightNDCSpace = posLightSpace.xyz / posLightSpace.w;
     // Mapping to [0, 1]
     vec3 depthTx = posLightNDCSpace * 0.5f + 0.5f;
     // Store the depth of the current fragment to test
     float currentFragDepth = depthTx.z;
-    
+
+    float bias = max(0.002, 0.004 - abs(dot(sun.dir, normal)));
+
     float shadowFactor = 0.f;
     // PCF with a 3x3 kernel
     vec2 texelSize = vec2(1.f / screen_w, 1.f / screen_h);
     for(int x = -1; x <= 1; x++) {
         for(int y = -1; y <= 1; y++) {
             float storedDepth = texture(depth_map, depthTx.xy + texelSize * vec2(x, y)).r;
-            shadowFactor += (storedDepth + 0.001 < currentFragDepth) ? 1.f : 0.f;
+            shadowFactor += (storedDepth + bias < currentFragDepth) ? 1.f : 0.f;
         }
     }
     shadowFactor /= 9.f;
-
-    return mix(lightColor, shadowColor, shadowFactor);
-}
-vec4 applyShadowNoPCF(vec4 lightColor, vec4 shadowColor) {
-    // Change the pos in light space to Normalized Device Coordinates (between [-1, 1])
-    vec3 posLightNDCSpace = posLightSpace.xyz / posLightSpace.w;
-    // Mapping to [0, 1]
-    vec3 depthTx = posLightNDCSpace * 0.5f + 0.5f;
-    // Store the depth of the current fragment to test
-    float currentFragDepth = depthTx.z;
-    float storedDepth = texture(depth_map, depthTx.xy).r;
-    
-    float shadowFactor = (storedDepth + 0.001 < currentFragDepth) ? 1.f : 0.f;
 
     return mix(lightColor, shadowColor, shadowFactor);
 }
@@ -94,12 +83,11 @@ void main() {
     vec4 lightColor = K*vec4(ambiantColor + diffuseColor + specularColor, 1.0);
     vec4 shadowColor = vec4(vec3(lightColor*0.05), 1.f);
     //color = lightColor;
-    color = applyShadow(lightColor, shadowColor); 
-    //color = applyShadow(vec4(1, 1, 0, 1), shadowColor); 
+    color = applyShadow(lightColor, shadowColor, N); 
     //color = vec4(N*0.5 + 0.5, 1.f);
 
     // Basic HDR
-    color = color / (color + vec4(1.f));
-    //float exposure = 1.f;
-    //color = 1.f - (exp(-color*exposure));
+    //color = color / (color + vec4(1.f));
+    float exposure = 1.f;
+    color = 1.f - (exp(-color*exposure));
 }

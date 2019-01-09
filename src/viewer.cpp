@@ -135,27 +135,29 @@ void FirstPerson::update(Viewer& viewer, float dt) {
     glm::vec3 d(viewer.getSightDirection());
 
     float speed = 10.f;
-    glm::vec3 h(d);
+    glm::vec3 h(0);
     bool move = false;
     const glm::vec3& position = viewer.getPosition();
 
     if (glfwGetKey(m_window, GLFW_KEY_W) == GLFW_PRESS) {
         move = true;
+        h += d;
     }
     if (glfwGetKey(m_window, GLFW_KEY_A) == GLFW_PRESS) {
         move = true;
-        h = glm::normalize(glm::vec3(h.z, 0, -h.x));
+        h += glm::normalize(glm::vec3(d.z, 0, -d.x));
     }
     if (glfwGetKey(m_window, GLFW_KEY_S) == GLFW_PRESS) {
         move = true;
-        h = -h;
+        h -= d;
     }
     if (glfwGetKey(m_window, GLFW_KEY_D) == GLFW_PRESS) {
         move = true;
-        h = glm::normalize(glm::vec3(-h.z, 0, h.x));    
+        h += glm::normalize(glm::vec3(-d.z, 0, d.x));    
     }
-
-    if(move) {
+    
+    if(move && glm::length(h) > 0) {
+        h = glm::normalize(h);
         viewer.setPosition(position + h*dt*speed);
     }
 

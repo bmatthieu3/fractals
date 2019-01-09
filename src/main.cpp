@@ -16,32 +16,6 @@
 
 using namespace std;
 
-static float theta = 0.f;
-static float delta = 3.14f/2.f;
-
-void processInput(GLFWwindow *window, const GLFWvidmode* mode, Viewer& viewer)
-{
-    // Quit the program when pressing escape
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    // Get the mouse position
-    double xpos, ypos;
-    glfwGetCursorPos(window, &xpos, &ypos);
-
-    glm::vec2 dx(xpos - mode->width/2, ypos - mode->height/2);
-    theta += 0.00006 * dx.x;
-    delta += 0.00006 * dx.y;
-    if(delta >= 3.14 - 0.1) {
-        delta = 3.14 - 0.1;
-    } else if(delta <= 0.1) {
-        delta = 0.1;
-    }
-    glm::vec3 dirCamera(-sin(theta)*sin(delta), cos(delta), cos(theta)*sin(delta));
-
-    viewer.setDirection(dirCamera);
-}
- 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
 // ---------------------------------------------------------------------------------------------
 void framebuffer_size_callback(GLFWwindow* window, int width, int height)
@@ -54,8 +28,9 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
 class App {
     public:
         App(const std::string& name) : m_closed(false) {
-            m_mainViewer = Viewer::createPerspectiveViewer(glm::vec3(5, 2, 5), glm::vec3(0));
-            m_sunViewer = Viewer::createOrthoViewer(glm::vec3(8, 8, -8), glm::vec3(0), 10.f);
+            unique_ptr<Viewer> main = make_unique<Viewer>(glm::vec3(5, 2, 5), glm::vec3(0));
+            unique_ptr<Viewer> sun = make_unique<Viewer>(glm::vec3(8, 8, -8), glm::vec3(0));
+            sun->setOrthoProjection();
 
             // glfw: initialize and configure
             // ------------------------------
@@ -118,7 +93,12 @@ class App {
 
             // Set camera movement
             unique_ptr<CircleMovement> movement = make_unique<CircleMovement>(glm::vec3(0.f), 8, 5.f);
-            m_sunViewer->applyMovement(std::move(movement));
+            sun->applyMovement(std::move(movement));
+            unique_ptr<FirstPerson> FPSControlledMovement = make_unique<FirstPerson>(window, m_mode);
+            main->applyMovement(std::move(FPSControlledMovement));
+
+            m_viewers.insert(std::make_pair<string, unique_ptr<Viewer>>("sun", std::move(sun)));
+            m_viewers.insert(std::make_pair<string, unique_ptr<Viewer>>("main", std::move(main)));
 
             // Loading shaders
             shared_ptr<Shader> animated = make_shared<Shader>("./shaders/vertex_anim.glsl", "./shaders/frag_textured.glsl");
@@ -156,27 +136,36 @@ class App {
         void run() {
             // render loop
             // -----------
+            float time;
+            float prevTime = glfwGetTime();
             while (!glfwWindowShouldClose(window))
             {
-                float time = glfwGetTime();
+                time = glfwGetTime();
+                float dt = time - prevTime;
                 // input
                 // -----
-                processInput(window, m_mode, *m_mainViewer);
+                // Quit the program when pressing escape
+                if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
+                    glfwSetWindowShouldClose(window, true);
+                }
 
                 // update
                 // ------
-                m_sunViewer->update(time);
+                // Update the viewers
+                for(auto& kv_viewer: m_viewers) {
+                    kv_viewer.second->update(dt);
+                }
+
                 for(uint32_t i = 0; i < m_models.size(); i++) {
                     m_models[i]->update(time);
                 }
-
                 // render
                 // ------
                 // Write onto the depth FBO
                 glViewport(0, 0, SHADOW_WIDTH, SHADOW_HEIGHT);
                 glBindFramebuffer(GL_FRAMEBUFFER, m_depthFBO);
                 glClear(GL_DEPTH_BUFFER_BIT);
-                writeToCurrentFBO(*m_sunViewer);
+                writeToCurrentFBO(*m_viewers["sun"]);
 
                 glBindFramebuffer(GL_FRAMEBUFFER, 0);
 
@@ -185,13 +174,15 @@ class App {
                 glClearColor(0.f, 1.f, 0.f, 1.0f);
                 glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                writeToCurrentFBO(*m_mainViewer);
+                writeToCurrentFBO(*m_viewers["main"]);
                 //renderDebugTextureMap();
 
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
                 // -------------------------------------------------------------------------------
                 glfwSwapBuffers(window);
                 glfwPollEvents();
+
+                prevTime = time;
             }
         }
 
@@ -202,15 +193,15 @@ class App {
             shader->sendUniform1i("screen_w", m_mode->width);
             shader->sendUniform1i("screen_h", m_mode->height);
 
-            shader->sendUniformMatrix4fv("viewLightSpace", m_sunViewer->getViewMatrix());
-            shader->sendUniformMatrix4fv("clipLightSpace", m_sunViewer->getProjectionMatrix());
+            shader->sendUniformMatrix4fv("viewLightSpace", m_viewers["sun"]->getViewMatrix());
+            shader->sendUniformMatrix4fv("clipLightSpace", m_viewers["sun"]->getProjectionMatrix());
             // Send sun directional light
             shader->sendUniform3f("sun.ambiant", glm::vec3(0.5, 0.5, 0.5));
             shader->sendUniform3f("sun.diffuse", glm::vec3(0.9, 1.0, 1.0));
             shader->sendUniform3f("sun.specular", glm::vec3(1));
 
-            shader->sendUniform3f("sun.dir", m_sunViewer->getSightDirection());
-            shader->sendUniform3f("eyeWorldSpace", m_mainViewer->getPosition());
+            shader->sendUniform3f("sun.dir", m_viewers["sun"]->getSightDirection());
+            shader->sendUniform3f("eyeWorldSpace", m_viewers["main"]->getPosition());
 
             glActiveTexture(GL_TEXTURE0);
             shader->sendUniform1i("depth_map", 0);
@@ -241,8 +232,7 @@ class App {
         bool m_closed;
         GLFWwindow* window;
         const GLFWvidmode* m_mode;
-        unique_ptr<Viewer> m_mainViewer;
-        unique_ptr<Viewer> m_sunViewer;
+        map<string, unique_ptr<Viewer>> m_viewers;
 
         // Depth FrameBuffer object
         shared_ptr<Texture> m_depthMap;

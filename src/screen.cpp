@@ -8,15 +8,14 @@
 
 using namespace glm;
 
-ScreenQuad::ScreenQuad(const shared_ptr<Texture> texture):
-    m_texture(texture) {
+ScreenQuad::ScreenQuad() {
     // define the quad
-    float data[] = {1.f, 1.f, 0, 1, 1,
-        -1.f, 1.f, 0, 0, 1,
-        -1.f, -1.f, 0, 0, 0,
-        1.f, -1.f, 0, 1, 0};
-    
-    m_indices = vector<uint32_t>({0, 1, 2, 0, 2, 3});
+    float screen_position[] = {
+        1.f, 1.f, 0,
+        -1.f, 1.f, 0,
+        -1.f, -1.f, 0,
+        1.f, -1.f, 0
+    };
 
     glGenVertexArrays(1, &m_vao);
     glGenBuffers(1, &m_vbo);
@@ -25,15 +24,15 @@ ScreenQuad::ScreenQuad(const shared_ptr<Texture> texture):
     glBindVertexArray(m_vao);
 
     glBindBuffer(GL_ARRAY_BUFFER, m_vbo);
-    glBufferData(GL_ARRAY_BUFFER, 20 * sizeof(float), &data[0], GL_STATIC_DRAW);
+    glBufferData(GL_ARRAY_BUFFER, 12 * sizeof(float), &screen_position[0], GL_STATIC_DRAW);
 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_ebo);
+
+    vector<uint32_t> m_indices = vector<uint32_t>({0, 1, 2, 0, 2, 3});
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, m_indices.size() * sizeof(uint32_t), m_indices.data(), GL_STATIC_DRAW);
 
-    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3 * sizeof(float), (void*)0);
     glEnableVertexAttribArray(0);
-    glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, 5 * sizeof(float), (void*)(3 * sizeof(float)));
-    glEnableVertexAttribArray(1);
 
     // note that this is allowed, the call to glVertexAttribPointer registered m_vbo as the vertex attribute's bound vertex buffer object so afterwards we can safely unbind
     glBindBuffer(GL_ARRAY_BUFFER, 0); 
@@ -52,16 +51,17 @@ ScreenQuad::~ScreenQuad() {
     glDeleteBuffers(1, &m_ebo);
 }
 
-void ScreenQuad::draw(const shared_ptr<Shader> shader) const {
+void ScreenQuad::draw(const shared_ptr<Shader> shader, float time, float depl_x, float depl_y, float zoom) const {
     shader->bind();
+    shader->sendUniform1f("time", time);
 
-    // Send the texture to plot on the screen quad 
-    glActiveTexture(GL_TEXTURE0);
-    shader->sendUniform1i("tex_screen", 0);
-    glBindTexture(GL_TEXTURE_2D, m_texture->id);
-    
+    shader->sendUniform1f("zoom", zoom);
+
+    shader->sendUniform1f("deplt_x", depl_x);
+    shader->sendUniform1f("deplt_y", depl_y);
+
     // bind the VAO before drawing
     glBindVertexArray(m_vao);
-    glDrawElements(GL_TRIANGLES, m_indices.size(), GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 }

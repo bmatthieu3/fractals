@@ -24,10 +24,10 @@ using namespace glm;
 
 class ScreenQuad {
     public:
-        ScreenQuad(const shared_ptr<Texture> texture);
+        ScreenQuad();
         ~ScreenQuad();
 
-        void draw(const shared_ptr<Shader> shader) const;
+        void draw(const shared_ptr<Shader> shader, float time, float depl_x, float depl_y, float zoom) const;
 
     private:
         // Vertex Array Object
@@ -36,9 +36,6 @@ class ScreenQuad {
         unsigned int m_vbo;
         // Element Buffer Object
         unsigned int m_ebo;
-
-        vector<uint32_t> m_indices;
-        shared_ptr<Texture> m_texture;
 };
 
 #endif

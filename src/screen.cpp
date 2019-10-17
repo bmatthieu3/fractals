@@ -1,11 +1,7 @@
 #include <iostream>
 #include <memory>
 
-#include <glm/vec3.hpp>           // vec3
-
 #include "screen.hpp"
-
-using namespace glm;
 
 ScreenQuad::ScreenQuad() {
     // define the quad

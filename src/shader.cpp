@@ -5,10 +5,6 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
-#include <glm/vec4.hpp>           // vec4
-#include <glm/mat4x4.hpp>         // mat4
-#include <glm/gtc/type_ptr.hpp>
-
 #include "shader.hpp"
 
 Shader::Shader(const std::string& vertex_filename, const std::string& fragment_filename) {
@@ -106,7 +102,7 @@ void Shader::sendUniform1i(const std::string& attribute, unsigned int data) cons
         glUniform1i(dataLocation, data);
     }
 }
-
+/*
 void Shader::sendUniform3f(const std::string& attribute, const glm::vec3& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
     if(dataLocation != -1) {
@@ -127,3 +123,4 @@ void Shader::sendUniformMatrix4fv(const std::string& attribute, const glm::mat4&
         glUniformMatrix4fv(dataLocation, 1, GL_FALSE, glm::value_ptr(data));
     }
 }
+*/

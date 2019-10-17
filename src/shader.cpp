@@ -7,6 +7,10 @@
 
 #include "shader.hpp"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+#include <glm/gtc/type_ptr.hpp>
+
 Shader::Shader(const std::string& vertex_filename, const std::string& fragment_filename) {
     // VERTEX shader compilation
     GLuint vertex_shader = glCreateShader(GL_VERTEX_SHADER);
@@ -102,25 +106,24 @@ void Shader::sendUniform1i(const std::string& attribute, unsigned int data) cons
         glUniform1i(dataLocation, data);
     }
 }
-/*
+
 void Shader::sendUniform3f(const std::string& attribute, const glm::vec3& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
     if(dataLocation != -1) {
         glUniform3fv(dataLocation, 1, glm::value_ptr(data));
     } 
 }
-
+/*
 void Shader::sendUniform4f(const std::string& attribute, const glm::vec4& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
     if(dataLocation != -1) {
         glUniform4fv(dataLocation, 1, glm::value_ptr(data));
     }
 }
-
+*/
 void Shader::sendUniformMatrix4fv(const std::string& attribute, const glm::mat4& data) const {
     int dataLocation = glGetUniformLocation(m_program, attribute.c_str());
     if(dataLocation != -1) {
         glUniformMatrix4fv(dataLocation, 1, GL_FALSE, glm::value_ptr(data));
     }
 }
-*/

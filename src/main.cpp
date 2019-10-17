@@ -12,6 +12,9 @@
 #include "settings.hpp"
 #include "stb_image.h"
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 using namespace std;
 
 // glfw: whenever the window size changed (by OS or user resize) this callback function executes
@@ -22,8 +25,6 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     // height will be significantly larger than specified on retina displays.
     glViewport(0, 0, width, height);
 }
-
-
 
 class App {
     public:
@@ -81,6 +82,20 @@ class App {
 
             m_screen = make_unique<ScreenQuad>();
             std::cout << "Init terminated successfully" << std::endl;
+
+            // Projection matrix : 45° Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+            m_projection = glm::perspective(glm::radians(60.0f), static_cast<float>(m_mode->width) / static_cast<float>(m_mode->height), 0.1f, 100.0f);
+
+            // Or, for an ortho camera :
+            //glm::mat4 Projection = glm::ortho(-10.0f,10.0f,-10.0f,10.0f,0.0f,100.0f); // In world coordinates
+
+            // Camera matrix
+            m_eye = glm::vec3(10, 0, 10);
+            m_view = glm::lookAt(
+               m_eye, // Camera is at (4,3,3), in World Space
+               glm::vec3(0, 0, 0), // and looks at the origin
+               glm::vec3(0, 1, 0)  // Head is up (set to 0,-1,0 to look upside-down)
+            );
         }
 
         ~App() {
@@ -142,7 +157,25 @@ class App {
                 // draw
                 // ------
                 // Update the viewers
-                m_screen->draw(m_shaders["fractals"], time, pos_center_x, pos_center_y, zoom);
+                shared_ptr<Shader> shader = m_shaders["fractals"];
+                shader->bind();
+                shader->sendUniform1f("time", time);
+
+                shader->sendUniform1f("zoom", zoom);
+
+                shader->sendUniform1f("deplt_x", pos_center_x);
+                shader->sendUniform1f("deplt_y", pos_center_y);
+
+                shader->sendUniform1f("width", m_mode->width);
+                shader->sendUniform1f("height", m_mode->height);
+
+                shader->sendUniformMatrix4fv("projection", m_projection);
+                shader->sendUniformMatrix4fv("view", m_view);
+
+                shader->sendUniform3f("eye", m_eye);
+
+                m_screen->draw();
+                shader->unbind();
 
                 // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
                 // -------------------------------------------------------------------------------
@@ -159,6 +192,10 @@ class App {
         map<string, shared_ptr<Shader>> m_shaders;
 
         unique_ptr<ScreenQuad> m_screen;
+
+        glm::mat4 m_projection;
+        glm::mat4 m_view;
+        glm::vec3 m_eye;
 };
 
 int main(void)

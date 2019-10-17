@@ -46,15 +46,7 @@ ScreenQuad::~ScreenQuad() {
     glDeleteBuffers(1, &m_ebo);
 }
 
-void ScreenQuad::draw(const shared_ptr<Shader> shader, float time, float depl_x, float depl_y, float zoom) const {
-    shader->bind();
-    shader->sendUniform1f("time", time);
-
-    shader->sendUniform1f("zoom", zoom);
-
-    shader->sendUniform1f("deplt_x", depl_x);
-    shader->sendUniform1f("deplt_y", depl_y);
-
+void ScreenQuad::draw() const {
     // bind the VAO before drawing
     glBindVertexArray(m_vao);
     glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);

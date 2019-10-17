@@ -16,7 +16,7 @@ class ScreenQuad {
         ScreenQuad();
         ~ScreenQuad();
 
-        void draw(const shared_ptr<Shader> shader, float time, float depl_x, float depl_y, float zoom) const;
+        void draw() const;
 
     private:
         // Vertex Array Object

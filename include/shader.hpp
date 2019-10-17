@@ -6,6 +6,9 @@
 #include <glad/glad.h>
 #include <GLFW/glfw3.h>
 
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
+
 using namespace std;
 
 class Shader {
@@ -21,8 +24,8 @@ class Shader {
         void sendUniform1f(const std::string& attribute, float data) const;
         void sendUniform1i(const std::string& attribute, unsigned int data) const;
         //void sendUniform4f(const std::string& attribute, const glm::vec4& data) const;
-        //void sendUniform3f(const std::string& attribute, const glm::vec3& data) const;
-        //void sendUniformMatrix4fv(const std::string& attribute, const glm::mat4& data) const;
+        void sendUniform3f(const std::string& attribute, const glm::vec3& data) const;
+        void sendUniformMatrix4fv(const std::string& attribute, const glm::mat4& data) const;
 
     private:
         void compile(GLuint shader, const string& filename) const;

@@ -8,7 +8,6 @@
 #include <fstream>
 
 #include "shader.hpp"
-#include "model.hpp"
 #include "screen.hpp"
 #include "settings.hpp"
 #include "viewer.hpp"

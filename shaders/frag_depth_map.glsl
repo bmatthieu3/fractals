@@ -22,11 +22,11 @@ void main() {
     float re_z = 0.f;
     float im_z = 0.f;
 
-    int N = 1000;
+    int N = 200;
     float max_intensity = 0.5f;
     vec4 c0 = vec4(0/255.f, 0/255.f, 0/255.f, 1.f);
     vec4 c1 = vec4(18/255.f, 23/255.f, 76/255.f, 1.f);
-    vec4 c2 = vec4(0/255.f, 15/255.f, 80/255.f, 1.f);
+    vec4 c2 = vec4(50/255.f, 65/255.f, 130/255.f, 1.f);
 
     float factor = 1.f;
     for(int n = 0; n < N; n++) {
@@ -37,12 +37,12 @@ void main() {
         float r = length(vec2(re_z, im_z));
 
         if(r > 2.f) {
-            factor = 10.f*float(n)/float(N-1);
+            factor = float(n)/float(N-1);
             //color = vec4(0.f, factor, 0.f, 1.f);
             break;
         }
     }
 
-    color = mix(c0, c1, smoothstep(0.f, 5.f, factor));
-    color = mix(color, c2, smoothstep(5.f, 10.f, factor));
+    color = mix(c0, c1, smoothstep(0.f, 0.5f, factor));
+    color = mix(color, c2, smoothstep(0.5f, 1.f, factor));
 }

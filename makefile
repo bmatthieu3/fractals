@@ -2,19 +2,19 @@ CXX=g++
 CXXFLAGS=-std=c++1z
 OS=$(shell uname)
 ifeq ($(OS),Darwin)
-	LDFLAGS=-lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -lpthread -ldl -lassimp
+	LDFLAGS=-lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -lpthread -ldl
 else
-	LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl -lassimp
+	LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif
 INC=-Iinclude/
-EXEC=asia-engine
+EXEC=fractals
 SRC= $(wildcard src/*.cpp)
 OBJ= $(SRC:.cpp=.o)
 
 all: $(EXEC)
 	./$<
 
-asia-engine: $(OBJ)
+fractals: $(OBJ)
 	$(CXX) -o $@ $^ $(LDFLAGS)
 
 %.o: %.cpp

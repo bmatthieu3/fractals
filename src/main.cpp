@@ -108,14 +108,17 @@ class App {
         void run() {
             // render loop
             // -----------
-            float time;
-            float first_time = glfwGetTime();
-            float depl_x = 0.f;
-            float depl_y = 0.f;
+            float time = glfwGetTime();
+            float prev_time = time;
+            float pos_center_x = 0.f;
+            float pos_center_y = 0.f;
             float depl_val = 0.1f;
             float zoom = 1.f;
             while (!glfwWindowShouldClose(window)) {
-                time = glfwGetTime() - first_time;
+                prev_time = time;
+                time = glfwGetTime();
+
+                float dt = 10.f*(time - prev_time);
 
                 // input
                 // -----
@@ -124,22 +127,23 @@ class App {
                     glfwSetWindowShouldClose(window, true);
                 } else {
                     if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-                        depl_y += depl_val;
+                        pos_center_y += dt*(depl_val/zoom);
+                    } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                        pos_center_y -= dt*(depl_val/zoom);
                     }
-                    if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                        depl_y -= depl_val;
-                    }
+
                     if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                        depl_x += depl_val;
+                        pos_center_x += dt*(depl_val/zoom);
+                    } else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                        pos_center_x -= dt*(depl_val/zoom);
                     }
-                    if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                        depl_x -= depl_val;
-                    }
+
                     if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                        zoom += 10.f;
-                    }
-                    if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                        zoom -= 10.f;
+                        zoom += 1.f;
+                    } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                        zoom -= 1.f;
+
+                        zoom = std::max(1.f, zoom);
                     }
 
                     // update
@@ -152,13 +156,13 @@ class App {
                     glClearColor(0.f, 0.0f, 0.f, 1.0f);
                     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-                    m_screen->draw(m_shaders["debug"], time, depl_x, depl_y, zoom);
+                    m_screen->draw(m_shaders["debug"], time, pos_center_x, pos_center_y, zoom);
 
                     // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
                     // -------------------------------------------------------------------------------
                     glfwSwapBuffers(window);
                     glfwPollEvents();
-                }   
+                }
             }
         }
 

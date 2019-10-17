@@ -4,7 +4,7 @@ OS=$(shell uname)
 ifeq ($(OS),Darwin)
 	LDFLAGS=-lglfw3 -framework OpenGL -framework Cocoa -framework IOKit -framework CoreVideo -lpthread -ldl
 else
-	LDFLAGS=-lglfw3 -lGL -lX11 -lpthread -lXrandr -lXi -ldl
+	LDFLAGS=-lglfw3 -lXinerama -lXxf86vm -lXcursor -lGL -lX11 -lpthread -lXrandr -lXi -ldl
 endif
 INC=-Iinclude/
 EXEC=fractals

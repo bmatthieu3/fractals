@@ -14,10 +14,10 @@ void main() {
     float off_re = -0.743643887037151;
     float off_im = 0.13182590420533;
 
-    float zoom = min(exp(time), 30000.f);
+    //float zoom = min(exp(time), 30000.f);
     //float zoom = 1.f;
-    float re_c = (pos_screen.x + deplt_x)/(zoom) + off_re;
-    float im_c = (pos_screen.y + deplt_y)/(zoom) + off_im;
+    float re_c = pos_screen.x/zoom + deplt_x;
+    float im_c = pos_screen.y/zoom + deplt_y;
 
     float re_z = 0.f;
     float im_z = 0.f;

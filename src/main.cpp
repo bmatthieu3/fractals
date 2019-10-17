@@ -23,6 +23,8 @@ void framebuffer_size_callback(GLFWwindow* window, int width, int height)
     glViewport(0, 0, width, height);
 }
 
+
+
 class App {
     public:
         App(const std::string& name) : m_closed(false) {
@@ -55,6 +57,9 @@ class App {
             glfwMakeContextCurrent(window);
             glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
 
+            // Set key callback
+            //glfwSetKeyCallback(window, key_callback);
+
             // glad: load all OpenGL function pointers
             // ---------------------------------------
             if (!gladLoadGLLoader((GLADloadproc)glfwGetProcAddress))
@@ -70,30 +75,11 @@ class App {
             // Tell stbi to flip the y-axis of the loaded image.
             stbi_set_flip_vertically_on_load(true);
 
-            // Set camera movement
-
             // Loading shaders
-            
-            shared_ptr<Shader> animated = make_shared<Shader>("./shaders/vertex_anim.glsl", "./shaders/frag_textured.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("animated", animated));
-            
-            shared_ptr<Shader> simple = make_shared<Shader>("./shaders/vertex.glsl", "./shaders/frag_textured.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("static", simple));
-            // Shader that draw a texture map onto a quad.
-            // Useful for debugging purposes.
-            
-            shared_ptr<Shader> debugShader = make_shared<Shader>("./shaders/vertex_screen.glsl", "./shaders/frag_depth_map.glsl");
-            m_shaders.insert(pair<string, shared_ptr<Shader>>("debug", debugShader));
+            shared_ptr<Shader> fractals_shader = make_shared<Shader>("./shaders/vertex_fractals.glsl", "./shaders/frag_fractals.glsl");
+            m_shaders.insert(pair<string, shared_ptr<Shader>>("fractals", fractals_shader));
 
             m_screen = make_unique<ScreenQuad>();
-
-            // Loading meshes
-            /*unique_ptr<Model> bob = make_unique<Model>(m_shaders["textured"], "../resources/Content/boblampclean.md5mesh");
-            bob->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.05f)));
-            m_models.push_back(std::move(bob));
-            unique_ptr<Model> nanosuit = make_unique<Model>(m_shaders["static"], "./resources/nanosuit/nanosuit.obj");
-            nanosuit->applyTransformation(glm::scale(glm::mat4(1.f), glm::vec3(0.2f)));
-            m_models.push_back(std::move(nanosuit));*/
             std::cout << "Init terminated successfully" << std::endl;
         }
 
@@ -118,50 +104,50 @@ class App {
                 time = glfwGetTime();
 
                 float dt = 10.f*(time - prev_time);
+                // clear the screen
+                // ------
+                glClearColor(0.f, 0.0f, 0.f, 1.0f);
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
                 // input
                 // -----
                 // Quit the program when pressing escape
                 if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS) {
                     glfwSetWindowShouldClose(window, true);
-                } else {
-                    if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
-                        pos_center_y += dt*(depl_val/zoom);
-                    } else if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
-                        pos_center_y -= dt*(depl_val/zoom);
-                    }
-
-                    if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
-                        pos_center_x += dt*(depl_val/zoom);
-                    } else if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
-                        pos_center_x -= dt*(depl_val/zoom);
-                    }
-
-                    if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
-                        zoom += 1.f;
-                    } else if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-                        zoom -= 1.f;
-
-                        zoom = std::max(1.f, zoom);
-                    }
-
-                    // update
-                    // ------
-                    // Update the viewers
-                    
-                    // render
-                    // ------
-                    // Write onto the depth FBO
-                    glClearColor(0.f, 0.0f, 0.f, 1.0f);
-                    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-                    m_screen->draw(m_shaders["debug"], time, pos_center_x, pos_center_y, zoom);
-
-                    // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
-                    // -------------------------------------------------------------------------------
-                    glfwSwapBuffers(window);
-                    glfwPollEvents();
                 }
+
+                if (glfwGetKey(window, GLFW_KEY_UP) == GLFW_PRESS) {
+                    pos_center_y += dt*(depl_val/zoom);
+                }
+                if (glfwGetKey(window, GLFW_KEY_DOWN) == GLFW_PRESS) {
+                    pos_center_y -= dt*(depl_val/zoom);
+                }
+
+                if (glfwGetKey(window, GLFW_KEY_RIGHT) == GLFW_PRESS) {
+                    pos_center_x += dt*(depl_val/zoom);
+                }
+                if (glfwGetKey(window, GLFW_KEY_LEFT) == GLFW_PRESS) {
+                    pos_center_x -= dt*(depl_val/zoom);
+                }
+
+                if (glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS) {
+                    zoom += 1.f;
+                }
+                if (glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+                    zoom -= 1.f;
+
+                    zoom = std::max(1.f, zoom);
+                }
+
+                // draw
+                // ------
+                // Update the viewers
+                m_screen->draw(m_shaders["fractals"], time, pos_center_x, pos_center_y, zoom);
+
+                // glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
+                // -------------------------------------------------------------------------------
+                glfwSwapBuffers(window);
+                glfwPollEvents();
             }
         }
 
@@ -180,5 +166,5 @@ int main(void)
     App app("Fractals");
     app.run();
 	
-    return EXIT_SUCCESS;
+    return 0;
 }

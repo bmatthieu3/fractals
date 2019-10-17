@@ -10,7 +10,6 @@
 #include "shader.hpp"
 #include "screen.hpp"
 #include "settings.hpp"
-#include "viewer.hpp"
 #include "stb_image.h"
 
 using namespace std;

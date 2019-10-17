@@ -17,7 +17,6 @@
 #include <glm/ext/matrix_transform.hpp> // perspective, translate, rotate
 
 #include "shader.hpp"
-#include "mesh.hpp"
 
 using namespace std;
 using namespace glm;

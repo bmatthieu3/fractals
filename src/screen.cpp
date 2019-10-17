@@ -3,7 +3,6 @@
 
 #include <glm/vec3.hpp>           // vec3
 
-#include "mesh.hpp"
 #include "screen.hpp"
 
 using namespace glm;

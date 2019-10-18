@@ -60,7 +60,7 @@ float fbm3d(in vec3 x, in float H)
     return t;
 }
 float sdf_sphere(vec3 p, vec3 c, float r) {
-    return length(mod(sin(time)*p, 5.f) - c) - r;
+    return length(p - c) - r;
 }
 
 float sdf_mandelbulb(vec3 r, int n) {
@@ -103,19 +103,17 @@ vec4 ray_marching(vec3 p_viewport) {
     float depth = 0.01f;
     for (int step = 0; step < NUM_MAX_ITERATION; step++) {
         vec3 p = eye + depth * dir;
-        //float dist = sdf_mandelbulb(p, 8);
-        //return vec4(dist, 0.f, 0.f, 1.f);
-        float dist = sdf_sphere(p, vec3(2.5f), 1.f);
+        float dist = sdf_sphere(p, vec3(0.0f), 1.f);
 
         if (dist < 1e-3) {
             // In the surface
-            return vec4(vec3(p/50.f), 1.f);
+            return vec4(vec3(p), 1.f);
         }
 
         depth = depth + dist;
 
         if (depth > MAX_DISTANCE) {
-            return vec4(1.f, 0.f, 0.f, 1.f);
+            return vec4(0.f, 0.f, 0.f, 1.f);
         }
     }
 
@@ -191,12 +189,12 @@ float in_mandelbrot_set(in vec2 x) {
 
 void main() {
     vec2 p = pos_screen.xy;
-    p.y /= (width/height);
+    //p.y /= (width/height);
     
     //float factor = warp_third(p*5)/3.f * (sin(time/2.f)*0.5 + 0.5);
 
     //vec2 h = vec2(fbm(p + time*vec2(0.6, 0.8), 1.0f), fbm(p + time*vec2(-5.6, 8.8), 1.0f));
-    float factor = in_mandelbrot_set((0.001f + 0.0005f*sin(time/2.f))*p + vec2(-0.06783611264225832, 0.6617460391250546));
+    /*float factor = in_mandelbrot_set((0.001f + 0.0005f*sin(time/2.f))*p + vec2(-0.06783611264225832, 0.6617460391250546));
 
     vec4 c0 = vec4(0/255.f, 0/255.f, 0/255.f, 1.f);
     vec4 c1 = vec4(57/255.f, 136/255.f, 243/255.f, 1.f);
@@ -206,6 +204,6 @@ void main() {
     color = mix(c0, c1, smoothstep(0.f, 0.33f, factor));
     color = mix(color, c2, smoothstep(0.33f, 0.66f, factor));
     color = mix(color, c3, smoothstep(0.66f, 1.f, factor));
-
-    //color = ray_marching(pos_screen);
+    */
+    color = ray_marching(pos_screen);
 }
